@@ -8,7 +8,6 @@
 #include "Utils/GLUtils.h"
 #include "Utils/Log.h"
 #include "Utils/Settings.h"
-#include "Utils/CudaUtils.h"
 #include "Utils/App.h"
 
 using namespace Varjo;
@@ -82,12 +81,12 @@ void Window::run()
 	if (settings.window.hideCursor)
 		glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	windowWidth = settings.window.width;
-	windowHeight = settings.window.height;
-
-	glViewport(0, 0, GLsizei(windowWidth), GLsizei(windowHeight));
-
+	film.initialize();
+	renderer.initialize();
+	windowResized(settings.window.width, settings.window.height);
 	mainloop();
+	renderer.shutdown();
+	film.shutdown();
 }
 
 uint32_t Window::getWindowWidth() const
@@ -108,6 +107,11 @@ const MouseInfo& Window::getMouseInfo() const
 float Window::getElapsedTime() const
 {
 	return float(glfwGetTime() - startTime);
+}
+
+const Film& Window::getFilm() const
+{
+	return film;
 }
 
 const FpsCounter& Window::getFpsCounter() const
@@ -231,20 +235,48 @@ void Window::update(float timeStep)
 	if (keyWasPressed(GLFW_KEY_ESCAPE))
 		shouldRun = false;
 
+	if (keyWasPressed(GLFW_KEY_PAGE_DOWN))
+	{
+		float tempScale = settings.window.renderScale * 0.5f;
+		uint32_t tempWidth = uint32_t(float(windowWidth) * tempScale + 0.5f);
+		uint32_t tempHeight = uint32_t(float(windowHeight) * tempScale + 0.5f);
+
+		if (tempWidth >= 2 && tempHeight >= 2)
+		{
+			settings.window.renderScale = tempScale;
+			resizeFilm();
+		}
+	}
+
+	if (keyWasPressed(GLFW_KEY_PAGE_UP))
+	{
+		if (settings.window.renderScale < 1.0f)
+		{
+			settings.window.renderScale *= 2.0f;
+
+			if (settings.window.renderScale > 1.0f)
+				settings.window.renderScale = 1.0f;
+
+			resizeFilm();
+		}
+	}
+
 	// update
 	(void)timeStep;
 }
 
 void Window::render(float timeStep, float interpolation)
 {
+	(void)timeStep;
+	(void)interpolation;
+
 	fpsCounter.tick();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	// render
-	(void)timeStep;
-	(void)interpolation;
+	renderer.render();
+	film.render();
 
 	glfwSwapBuffers(glfwWindow);
 }
@@ -281,4 +313,19 @@ void Window::windowResized(uint32_t width, uint32_t height)
 	windowHeight = height;
 
 	glViewport(0, 0, GLsizei(windowWidth), GLsizei(windowHeight));
+
+	resizeFilm();
+}
+
+void Window::resizeFilm()
+{
+	Settings& settings = App::getSettings();
+
+	uint32_t filmWidth = uint32_t(float(windowWidth) * settings.window.renderScale + 0.5);
+	uint32_t filmHeight = uint32_t(float(windowHeight) * settings.window.renderScale + 0.5);
+
+	filmWidth = MAX(uint32_t(1), filmWidth);
+	filmHeight = MAX(uint32_t(1), filmHeight);
+
+	film.resize(filmWidth, filmHeight);
 }

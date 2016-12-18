@@ -9,5 +9,8 @@ namespace Varjo
 	{
 	public:
 
+		void initialize();
+		void shutdown();
+		void render();
 	};
 }

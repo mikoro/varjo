@@ -6,6 +6,8 @@
 #include <map>
 
 #include "Utils/FpsCounter.h"
+#include "Utils/Film.h"
+#include "Core/Renderer.h"
 
 struct GLFWwindow;
 
@@ -35,8 +37,9 @@ namespace Varjo
 		uint32_t getWindowHeight() const;
 		const MouseInfo& getMouseInfo() const;
 		float getElapsedTime() const;
+		const Film& getFilm() const;
 		const FpsCounter& getFpsCounter() const;
-
+		
 		bool keyIsDown(int32_t key);
 		bool mouseIsDown(int32_t button);
 		bool keyWasPressed(int32_t key);
@@ -52,6 +55,7 @@ namespace Varjo
 		void checkWindowSize();
 		void printWindowSize();
 		void windowResized(uint32_t width, uint32_t height);
+		void resizeFilm();
 		
 		bool shouldRun = true;
 		bool glfwInitialized = false;
@@ -69,6 +73,8 @@ namespace Varjo
 		std::map<int32_t, bool> keyStates;
 		std::map<int32_t, bool> mouseStates;
 
+		Film film;
+		Renderer renderer;
 		FpsCounter fpsCounter;
 	};
 }
