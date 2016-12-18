@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{6897ec37-10ba-46bb-af5a-d87e8155dbbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{0efe9c13-6183-4c2c-832f-7b9e03c0af81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{947ff596-4f44-479c-83da-3d73818002a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{b2657f2b-747d-4206-a809-796eb405a2cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{349ac0fd-0e47-4a26-9332-8b69ba1d2c25}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\External\gl3w.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="src\External\nanovg.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="src\External\stb.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\FpsCounter.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\Log.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\Settings.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\StringUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\SysUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\Timer.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\GLUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\CudaUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\App.cpp" />
+    <ClCompile Include="src\Film.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Utils\FpsCounter.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Log.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Settings.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\StringUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\SysUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Timer.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\GLUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\CudaUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Common.h" />
+    <ClInclude Include="src\App.h" />
+    <ClInclude Include="src\Film.h" />
+    <ClInclude Include="src\Core\AABB.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Camera.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Color.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Intersection.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Random.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Ray.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\EulerAngle.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\MathUtils.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\Matrix4x4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\MovingAverage.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\ONB.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\Vector2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\Vector3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\Vector4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Scene.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Sphere.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Utils\Log.inl">
+      <Filter>Utils</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="src\Core\AABB.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Camera.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Color.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Random.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Ray.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\EulerAngle.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\MathUtils.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\Matrix4x4.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\MovingAverage.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\ONB.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\Vector2.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\Vector3.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Math\Vector4.cu">
+      <Filter>Math</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Scene.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Sphere.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Renderer.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="platform\windows\varjo.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

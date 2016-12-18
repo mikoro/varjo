@@ -1,0 +1,29 @@
+RT_ICON ICON "../../misc/icons/varjo.ico"
+GLFW_ICON ICON "../../misc/icons/varjo.ico"
+
+1 24 "varjo.exe.manifest"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "FileDescription", "Varjo"
+      VALUE "ProductName", "Varjo"
+      VALUE "InternalName", "Varjo"
+      VALUE "ProductVersion", "0.1.0"
+      VALUE "FileVersion", "0.1.0"
+      VALUE "CompanyName", "Mikko Ronkainen"
+      VALUE "LegalCopyright", "Copyright (C) 2016 Mikko Ronkainen"
+      VALUE "OriginalFilename", "varjo.exe"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
