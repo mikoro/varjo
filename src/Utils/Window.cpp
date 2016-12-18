@@ -4,11 +4,12 @@
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
-#include "App.h"
+#include "Utils/Window.h"
 #include "Utils/GLUtils.h"
 #include "Utils/Log.h"
 #include "Utils/Settings.h"
 #include "Utils/CudaUtils.h"
+#include "Utils/App.h"
 
 using namespace Varjo;
 
@@ -31,54 +32,16 @@ namespace
 	}
 }
 
-App::~App()
+Window::~Window()
 {
 	if (glfwInitialized)
 		glfwTerminate();
 }
 
-App& App::getApp()
-{
-	static App app;
-	return app;
-}
-
-Log& App::getLog()
-{
-	static Log log("varjo.log");
-	return log;
-}
-
-Settings& App::getSettings()
-{
-	static Settings settings;
-	return settings;
-}
-
-int App::run(int argc, char** argv)
+void Window::run()
 {
 	Log& log = App::getLog();
 	Settings& settings = App::getSettings();
-
-	if (!settings.load(argc, argv))
-		return -1;
-
-	int deviceCount;
-	CudaUtils::checkError(cudaGetDeviceCount(&deviceCount), "Could not get CUDA device count");
-	CudaUtils::checkError(cudaSetDevice(settings.general.cudaDeviceNumber), "Could not set CUDA device");
-
-	log.logInfo("CUDA selected device: %d (device count: %d)", settings.general.cudaDeviceNumber, deviceCount);
-
-	cudaDeviceProp deviceProp;
-	CudaUtils::checkError(cudaGetDeviceProperties(&deviceProp, settings.general.cudaDeviceNumber), "Could not get CUDA device properties");
-
-	int driverVersion;
-	CudaUtils::checkError(cudaDriverGetVersion(&driverVersion), "Could not get CUDA driver version");
-
-	int runtimeVersion;
-	CudaUtils::checkError(cudaRuntimeGetVersion(&runtimeVersion), "Could not get CUDA runtime version");
-
-	log.logInfo("CUDA device: %s | Compute capability: %d.%d | Driver version: %d | Runtime version: %d", deviceProp.name, deviceProp.major, deviceProp.minor, driverVersion, runtimeVersion);
 
 	log.logInfo("Initializing GLFW library");
 
@@ -125,51 +88,44 @@ int App::run(int argc, char** argv)
 	glViewport(0, 0, GLsizei(windowWidth), GLsizei(windowHeight));
 
 	mainloop();
-	
-	return 0;
 }
 
-GLFWwindow* App::getGlfwWindow() const
-{
-	return glfwWindow;
-}
-
-uint32_t App::getWindowWidth() const
+uint32_t Window::getWindowWidth() const
 {
 	return windowWidth;
 }
 
-uint32_t App::getWindowHeight() const
+uint32_t Window::getWindowHeight() const
 {
 	return windowHeight;
 }
 
-const MouseInfo& App::getMouseInfo() const
+const MouseInfo& Window::getMouseInfo() const
 {
 	return mouseInfo;
 }
 
-float App::getElapsedTime() const
+float Window::getElapsedTime() const
 {
 	return float(glfwGetTime() - startTime);
 }
 
-const FpsCounter& App::getFpsCounter() const
+const FpsCounter& Window::getFpsCounter() const
 {
 	return fpsCounter;
 }
 
-bool App::keyIsDown(int32_t key)
+bool Window::keyIsDown(int32_t key)
 {
 	return (glfwGetKey(glfwWindow, key) == GLFW_PRESS);
 }
 
-bool App::mouseIsDown(int32_t button)
+bool Window::mouseIsDown(int32_t button)
 {
 	return (glfwGetMouseButton(glfwWindow, button) == GLFW_PRESS);
 }
 
-bool App::keyWasPressed(int32_t key)
+bool Window::keyWasPressed(int32_t key)
 {
 	if (keyIsDown(key))
 	{
@@ -185,7 +141,7 @@ bool App::keyWasPressed(int32_t key)
 	return false;
 }
 
-bool App::mouseWasPressed(int32_t button)
+bool Window::mouseWasPressed(int32_t button)
 {
 	if (mouseIsDown(button))
 	{
@@ -201,7 +157,7 @@ bool App::mouseWasPressed(int32_t button)
 	return false;
 }
 
-float App::getMouseWheelScroll()
+float Window::getMouseWheelScroll()
 {
 	if (mouseInfo.hasScrolled)
 	{
@@ -215,7 +171,7 @@ float App::getMouseWheelScroll()
 // http://gafferongames.com/game-physics/fix-your-timestep/
 // http://gamesfromwithin.com/casey-and-the-clearly-deterministic-contraptions
 // https://randomascii.wordpress.com/2012/02/13/dont-store-that-in-a-float/
-void App::mainloop()
+void Window::mainloop()
 {
 	App::getLog().logInfo("Entering the main loop");
 
@@ -248,7 +204,7 @@ void App::mainloop()
 	}
 }
 
-void App::update(float timeStep)
+void Window::update(float timeStep)
 {
 	Settings& settings = App::getSettings();
 	
@@ -279,7 +235,7 @@ void App::update(float timeStep)
 	(void)timeStep;
 }
 
-void App::render(float timeStep, float interpolation)
+void Window::render(float timeStep, float interpolation)
 {
 	fpsCounter.tick();
 
@@ -293,7 +249,7 @@ void App::render(float timeStep, float interpolation)
 	glfwSwapBuffers(glfwWindow);
 }
 
-void App::checkWindowSize()
+void Window::checkWindowSize()
 {
 	int tempWindowWidth, tempWindowHeight;
 
@@ -309,7 +265,7 @@ void App::checkWindowSize()
 	}
 }
 
-void App::printWindowSize()
+void Window::printWindowSize()
 {
 	int tempWindowWidth, tempWindowHeight, tempFramebufferWidth, tempFramebufferHeight;
 
@@ -319,7 +275,7 @@ void App::printWindowSize()
 	App::getLog().logInfo("GLFW window size: %dx%d | GLFW framebuffer size: %dx%d", tempWindowWidth, tempWindowHeight, tempFramebufferWidth, tempFramebufferHeight);
 }
 
-void App::windowResized(uint32_t width, uint32_t height)
+void Window::windowResized(uint32_t width, uint32_t height)
 {
 	windowWidth = width;
 	windowHeight = height;

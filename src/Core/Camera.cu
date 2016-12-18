@@ -5,10 +5,10 @@
 
 #include "tinyformat/tinyformat.h"
 
-#include "App.h"
+#include "Utils/App.h"
+#include "Utils/Log.h"
 #include "Core/Camera.h"
 #include "Math/MathUtils.h"
-#include "Utils/Log.h"
 #include "Math/ONB.h"
 
 using namespace Varjo;
@@ -44,26 +44,26 @@ void Camera::reset()
 
 void Camera::update(float timeStep)
 {
-	App& app = App::getApp();
-	MouseInfo mouseInfo = app.getMouseInfo();
+	Window& window = App::getWindow();
+	MouseInfo mouseInfo = window.getMouseInfo();
 
 	// SPEED MODIFIERS //
 
-	if (app.keyWasPressed(GLFW_KEY_INSERT))
+	if (window.keyWasPressed(GLFW_KEY_INSERT))
 		currentSpeedModifier *= 2.0f;
 
-	if (app.keyWasPressed(GLFW_KEY_DELETE))
+	if (window.keyWasPressed(GLFW_KEY_DELETE))
 		currentSpeedModifier *= 0.5f;
 
 	float actualMoveSpeed = moveSpeed * currentSpeedModifier;
 
-	if (app.keyIsDown(GLFW_KEY_LEFT_CONTROL) || app.keyIsDown(GLFW_KEY_RIGHT_CONTROL))
+	if (window.keyIsDown(GLFW_KEY_LEFT_CONTROL) || window.keyIsDown(GLFW_KEY_RIGHT_CONTROL))
 		actualMoveSpeed *= slowSpeedModifier;
 
-	if (app.keyIsDown(GLFW_KEY_LEFT_SHIFT) || app.keyIsDown(GLFW_KEY_RIGHT_SHIFT))
+	if (window.keyIsDown(GLFW_KEY_LEFT_SHIFT) || window.keyIsDown(GLFW_KEY_RIGHT_SHIFT))
 		actualMoveSpeed *= fastSpeedModifier;
 
-	if (app.keyIsDown(GLFW_KEY_LEFT_ALT) || app.keyIsDown(GLFW_KEY_RIGHT_ALT))
+	if (window.keyIsDown(GLFW_KEY_LEFT_ALT) || window.keyIsDown(GLFW_KEY_RIGHT_ALT))
 		actualMoveSpeed *= veryFastSpeedModifier;
 
 	// ACCELERATIONS AND VELOCITIES //
@@ -72,7 +72,7 @@ void Camera::update(float timeStep)
 	angularVelocity = Vector3(0.0f, 0.0f, 0.0f);
 	bool movementKeyIsPressed = false;
 
-	if (app.mouseIsDown(GLFW_MOUSE_BUTTON_LEFT) || freeLook)
+	if (window.mouseIsDown(GLFW_MOUSE_BUTTON_LEFT) || freeLook)
 	{
 		smoothAngularAcceleration.y -= mouseInfo.deltaX * mouseSpeed;
 		smoothAngularAcceleration.x += mouseInfo.deltaY * mouseSpeed;
@@ -80,49 +80,49 @@ void Camera::update(float timeStep)
 		angularVelocity.x = mouseInfo.deltaY * mouseSpeed;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_W))
+	if (window.keyIsDown(GLFW_KEY_W))
 	{
 		smoothAcceleration += forward * actualMoveSpeed;
 		velocity = forward * actualMoveSpeed;
 		movementKeyIsPressed = true;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_S))
+	if (window.keyIsDown(GLFW_KEY_S))
 	{
 		smoothAcceleration -= forward * actualMoveSpeed;
 		velocity = -forward * actualMoveSpeed;
 		movementKeyIsPressed = true;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_D))
+	if (window.keyIsDown(GLFW_KEY_D))
 	{
 		smoothAcceleration += right * actualMoveSpeed;
 		velocity = right * actualMoveSpeed;
 		movementKeyIsPressed = true;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_A))
+	if (window.keyIsDown(GLFW_KEY_A))
 	{
 		smoothAcceleration -= right * actualMoveSpeed;
 		velocity = -right * actualMoveSpeed;
 		movementKeyIsPressed = true;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_E))
+	if (window.keyIsDown(GLFW_KEY_E))
 	{
 		smoothAcceleration += up * actualMoveSpeed;
 		velocity = up * actualMoveSpeed;
 		movementKeyIsPressed = true;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_Q))
+	if (window.keyIsDown(GLFW_KEY_Q))
 	{
 		smoothAcceleration -= up * actualMoveSpeed;
 		velocity = -up * actualMoveSpeed;
 		movementKeyIsPressed = true;
 	}
 
-	if (app.keyIsDown(GLFW_KEY_SPACE) || !enableMovement)
+	if (window.keyIsDown(GLFW_KEY_SPACE) || !enableMovement)
 	{
 		velocity = Vector3(0.0f, 0.0f, 0.0f);
 		smoothVelocity = Vector3(0.0f, 0.0f, 0.0f);

@@ -1,4 +1,4 @@
-// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
+﻿// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
 #include <vector>
@@ -6,10 +6,10 @@
 #include <GL/gl3w.h>
 
 #include "Utils/GLUtils.h"
-#include "App.h"
 #include "Utils/Settings.h"
 #include "Utils/Log.h"
 #include "Utils/StringUtils.h"
+#include "Utils/App.h"
 
 using namespace Varjo;
 

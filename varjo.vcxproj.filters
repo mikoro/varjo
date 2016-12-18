@@ -52,8 +52,15 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\App.cpp" />
-    <ClCompile Include="src\Film.cpp" />
+    <ClCompile Include="src\Utils\Film.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\Window.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\App.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\FpsCounter.h">
@@ -81,8 +88,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Common.h" />
-    <ClInclude Include="src\App.h" />
-    <ClInclude Include="src\Film.h" />
     <ClInclude Include="src\Core\AABB.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -131,7 +136,18 @@
     <ClInclude Include="src\Core\Sphere.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer.h" />
+    <ClInclude Include="src\Core\Renderer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Film.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Window.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\App.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Utils\Log.inl">
@@ -184,7 +200,9 @@
     <CudaCompile Include="src\Core\Sphere.cu">
       <Filter>Core</Filter>
     </CudaCompile>
-    <CudaCompile Include="src\Renderer.cu" />
+    <CudaCompile Include="src\Core\Renderer.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="platform\windows\varjo.rc">

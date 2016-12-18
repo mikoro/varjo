@@ -1,4 +1,4 @@
-// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
+﻿// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
 #ifdef _WIN32
@@ -14,8 +14,8 @@
 #include <boost/filesystem.hpp>
 
 #include "Utils/SysUtils.h"
-#include "App.h"
 #include "Utils/Log.h"
+#include "Utils/App.h"
 
 using namespace Varjo;
 namespace bf = boost::filesystem;

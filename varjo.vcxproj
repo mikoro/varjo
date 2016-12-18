@@ -107,15 +107,14 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Film.cpp" />
-    <ClCompile Include="src\App.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\External\gl3w.cpp" />
     <ClCompile Include="src\External\nanovg.cpp" />
     <ClCompile Include="src\External\stb.cpp" />
+    <ClCompile Include="src\Utils\App.cpp" />
+    <ClCompile Include="src\Utils\Window.cpp" />
     <ClCompile Include="src\Utils\CudaUtils.cpp" />
+    <ClCompile Include="src\Utils\Film.cpp" />
     <ClCompile Include="src\Utils\FpsCounter.cpp" />
     <ClCompile Include="src\Utils\GLUtils.cpp" />
     <ClCompile Include="src\Utils\Log.cpp" />
@@ -132,9 +131,9 @@
     <ClInclude Include="src\Core\Intersection.h" />
     <ClInclude Include="src\Core\Random.h" />
     <ClInclude Include="src\Core\Ray.h" />
+    <ClInclude Include="src\Core\Renderer.h" />
     <ClInclude Include="src\Core\Scene.h" />
     <ClInclude Include="src\Core\Sphere.h" />
-    <ClInclude Include="src\Film.h" />
     <ClInclude Include="src\Math\EulerAngle.h" />
     <ClInclude Include="src\Math\MathUtils.h" />
     <ClInclude Include="src\Math\Matrix4x4.h" />
@@ -143,8 +142,10 @@
     <ClInclude Include="src\Math\Vector2.h" />
     <ClInclude Include="src\Math\Vector3.h" />
     <ClInclude Include="src\Math\Vector4.h" />
-    <ClInclude Include="src\Renderer.h" />
+    <ClInclude Include="src\Utils\App.h" />
+    <ClInclude Include="src\Utils\Window.h" />
     <ClInclude Include="src\Utils\CudaUtils.h" />
+    <ClInclude Include="src\Utils\Film.h" />
     <ClInclude Include="src\Utils\FpsCounter.h" />
     <ClInclude Include="src\Utils\GLUtils.h" />
     <ClInclude Include="src\Utils\Log.h" />
@@ -152,7 +153,6 @@
     <ClInclude Include="src\Utils\StringUtils.h" />
     <ClInclude Include="src\Utils\SysUtils.h" />
     <ClInclude Include="src\Utils\Timer.h" />
-    <ClInclude Include="src\App.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="platform\windows\varjo.rc" />
@@ -166,6 +166,7 @@
     <CudaCompile Include="src\Core\Color.cu" />
     <CudaCompile Include="src\Core\Random.cu" />
     <CudaCompile Include="src\Core\Ray.cu" />
+    <CudaCompile Include="src\Core\Renderer.cu" />
     <CudaCompile Include="src\Core\Scene.cu" />
     <CudaCompile Include="src\Core\Sphere.cu" />
     <CudaCompile Include="src\Math\EulerAngle.cu" />
@@ -176,7 +177,6 @@
     <CudaCompile Include="src\Math\Vector2.cu" />
     <CudaCompile Include="src\Math\Vector3.cu" />
     <CudaCompile Include="src\Math\Vector4.cu" />
-    <CudaCompile Include="src\Renderer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

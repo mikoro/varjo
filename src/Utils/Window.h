@@ -6,8 +6,6 @@
 #include <map>
 
 #include "Utils/FpsCounter.h"
-#include "Utils/Log.h"
-#include "Utils/Settings.h"
 
 struct GLFWwindow;
 
@@ -25,19 +23,14 @@ namespace Varjo
 		bool hasScrolled = false;
 	};
 
-	class App
+	class Window
 	{
 	public:
 
-		~App();
+		~Window();
 
-		static App& getApp();
-		static Log& getLog();
-		static Settings& getSettings();
+		void run();
 
-		int run(int argc, char** argv);
-
-		GLFWwindow* getGlfwWindow() const;
 		uint32_t getWindowWidth() const;
 		uint32_t getWindowHeight() const;
 		const MouseInfo& getMouseInfo() const;
