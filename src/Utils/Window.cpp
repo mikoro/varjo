@@ -83,10 +83,17 @@ void Window::run()
 
 	film.initialize();
 	renderer.initialize();
+	infoPanel.initialize();
+	infoPanel.setState(InfoPanelState(settings.general.infoPanelState));
 	windowResized(settings.window.width, settings.window.height);
 	mainloop();
 	renderer.shutdown();
 	film.shutdown();
+}
+
+GLFWwindow* Window::getGlfwWindow() const
+{
+	return glfwWindow;
 }
 
 uint32_t Window::getWindowWidth() const
@@ -222,8 +229,8 @@ void Window::update(float timeStep)
 
 	mouseInfo.windowX = int32_t(newMouseX + 0.5);
 	mouseInfo.windowY = int32_t(double(windowHeight) - newMouseY - 1.0 + 0.5);
-	mouseInfo.filmX = int32_t((mouseInfo.windowX / double(windowWidth)) * (double(windowWidth) * settings.window.renderScale) + 0.5);
-	mouseInfo.filmY = int32_t((mouseInfo.windowY / double(windowHeight)) * (double(windowHeight) * settings.window.renderScale) + 0.5);
+	mouseInfo.filmX = int32_t((mouseInfo.windowX / double(windowWidth)) * (double(windowWidth) * settings.general.filmScale) + 0.5);
+	mouseInfo.filmY = int32_t((mouseInfo.windowY / double(windowHeight)) * (double(windowHeight) * settings.general.filmScale) + 0.5);
 	mouseInfo.deltaX = mouseInfo.windowX - previousMouseX;
 	mouseInfo.deltaY = mouseInfo.windowY - previousMouseY;
 	previousMouseX = mouseInfo.windowX;
@@ -235,34 +242,36 @@ void Window::update(float timeStep)
 	if (keyWasPressed(GLFW_KEY_ESCAPE))
 		shouldRun = false;
 
+	if (keyWasPressed(GLFW_KEY_F1))
+		infoPanel.selectNextState();
+
 	if (keyWasPressed(GLFW_KEY_PAGE_DOWN))
 	{
-		float tempScale = settings.window.renderScale * 0.5f;
+		float tempScale = settings.general.filmScale * 0.5f;
 		uint32_t tempWidth = uint32_t(float(windowWidth) * tempScale + 0.5f);
 		uint32_t tempHeight = uint32_t(float(windowHeight) * tempScale + 0.5f);
 
 		if (tempWidth >= 2 && tempHeight >= 2)
 		{
-			settings.window.renderScale = tempScale;
+			settings.general.filmScale = tempScale;
 			resizeFilm();
 		}
 	}
 
 	if (keyWasPressed(GLFW_KEY_PAGE_UP))
 	{
-		if (settings.window.renderScale < 1.0f)
+		if (settings.general.filmScale < 1.0f)
 		{
-			settings.window.renderScale *= 2.0f;
+			settings.general.filmScale *= 2.0f;
 
-			if (settings.window.renderScale > 1.0f)
-				settings.window.renderScale = 1.0f;
+			if (settings.general.filmScale > 1.0f)
+				settings.general.filmScale = 1.0f;
 
 			resizeFilm();
 		}
 	}
 
-	// update
-	(void)timeStep;
+	scene.camera.update(timeStep);
 }
 
 void Window::render(float timeStep, float interpolation)
@@ -277,6 +286,7 @@ void Window::render(float timeStep, float interpolation)
 
 	renderer.render();
 	film.render();
+	infoPanel.render(scene);
 
 	glfwSwapBuffers(glfwWindow);
 }
@@ -321,8 +331,8 @@ void Window::resizeFilm()
 {
 	Settings& settings = App::getSettings();
 
-	uint32_t filmWidth = uint32_t(float(windowWidth) * settings.window.renderScale + 0.5);
-	uint32_t filmHeight = uint32_t(float(windowHeight) * settings.window.renderScale + 0.5);
+	uint32_t filmWidth = uint32_t(float(windowWidth) * settings.general.filmScale + 0.5);
+	uint32_t filmHeight = uint32_t(float(windowHeight) * settings.general.filmScale + 0.5);
 
 	filmWidth = MAX(uint32_t(1), filmWidth);
 	filmHeight = MAX(uint32_t(1), filmHeight);

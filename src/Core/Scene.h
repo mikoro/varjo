@@ -3,11 +3,19 @@
 
 #pragma once
 
+#include <vector>
+
+#include "Core/Camera.h"
+#include "Core/Sphere.h"
+
 namespace Varjo
 {
 	class Scene
 	{
 	public:
 
+		Camera camera;
+
+		std::vector<Sphere> spheres;
 	};
 }

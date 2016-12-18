@@ -14,6 +14,10 @@ namespace Varjo
 		struct General
 		{
 			uint32_t cudaDeviceNumber;
+			bool checkGLErrors;
+			float filmScale;
+			uint32_t infoPanelState;
+			uint32_t infoPanelFontSize;
 		} general;
 
 		struct Window
@@ -23,8 +27,6 @@ namespace Varjo
 			bool fullscreen;
 			bool vsync;
 			bool hideCursor;
-			float renderScale;
-			bool checkGLErrors;
 		} window;
 	};
 }

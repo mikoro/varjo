@@ -112,6 +112,7 @@
     <ClCompile Include="src\External\nanovg.cpp" />
     <ClCompile Include="src\External\stb.cpp" />
     <ClCompile Include="src\Utils\App.cpp" />
+    <ClCompile Include="src\Utils\InfoPanel.cpp" />
     <ClCompile Include="src\Utils\Window.cpp" />
     <ClCompile Include="src\Utils\CudaUtils.cpp" />
     <ClCompile Include="src\Utils\Film.cpp" />
@@ -138,11 +139,11 @@
     <ClInclude Include="src\Math\MathUtils.h" />
     <ClInclude Include="src\Math\Matrix4x4.h" />
     <ClInclude Include="src\Math\MovingAverage.h" />
-    <ClInclude Include="src\Math\ONB.h" />
     <ClInclude Include="src\Math\Vector2.h" />
     <ClInclude Include="src\Math\Vector3.h" />
     <ClInclude Include="src\Math\Vector4.h" />
     <ClInclude Include="src\Utils\App.h" />
+    <ClInclude Include="src\Utils\InfoPanel.h" />
     <ClInclude Include="src\Utils\Window.h" />
     <ClInclude Include="src\Utils\CudaUtils.h" />
     <ClInclude Include="src\Utils\Film.h" />
@@ -173,7 +174,6 @@
     <CudaCompile Include="src\Math\MathUtils.cu" />
     <CudaCompile Include="src\Math\Matrix4x4.cu" />
     <CudaCompile Include="src\Math\MovingAverage.cu" />
-    <CudaCompile Include="src\Math\ONB.cu" />
     <CudaCompile Include="src\Math\Vector2.cu" />
     <CudaCompile Include="src\Math\Vector3.cu" />
     <CudaCompile Include="src\Math\Vector4.cu" />

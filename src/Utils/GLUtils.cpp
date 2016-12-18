@@ -106,7 +106,7 @@ void GLUtils::checkError(const std::string& message)
 
 	int32_t result = glGetError();
 
-	if (result != GL_NO_ERROR && settings.window.checkGLErrors)
+	if (result != GL_NO_ERROR && settings.general.checkGLErrors)
 		throw std::runtime_error(tfm::format("OpenGL error: %s: %s", message, getErrorMessage(result)));
 }
 
@@ -115,12 +115,12 @@ std::string GLUtils::getErrorMessage(int32_t result)
 	switch (result)
 	{
 		case GL_NO_ERROR: return "GL_NO_ERROR";
-		case GL_INVALID_ENUM: return "GL_INVALID_ENUM​";
+		case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
 		case GL_INVALID_VALUE: return "GL_INVALID_VALUE";
 		case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
 		case GL_STACK_OVERFLOW: return "GL_STACK_OVERFLOW";
 		case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
-		case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY​";
+		case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY";
 		default: return "Unknown error";
 	}
 }

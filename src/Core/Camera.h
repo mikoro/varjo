@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "Common.h"
 #include "Core/Ray.h"
 #include "Math/Vector2.h"

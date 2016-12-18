@@ -21,14 +21,17 @@ bool Settings::load(int argc, char** argv)
 		("help", "")
 
 		("general.cudaDeviceNumber", po::value(&general.cudaDeviceNumber)->default_value(0), "")
+		("general.checkGLErrors", po::value(&general.checkGLErrors)->default_value(true), "")
+		("general.filmScale", po::value(&general.filmScale)->default_value(0.5f), "")
+		("general.infoPanelState", po::value(&general.infoPanelState)->default_value(2), "")
+		("general.infoPanelFontSize", po::value(&general.infoPanelFontSize)->default_value(18), "")
 
 		("window.width", po::value(&window.width)->default_value(1280), "")
 		("window.height", po::value(&window.height)->default_value(800), "")
 		("window.fullscreen", po::value(&window.fullscreen)->default_value(false), "")
 		("window.vsync", po::value(&window.vsync)->default_value(false), "")
 		("window.hideCursor", po::value(&window.hideCursor)->default_value(false), "")
-		("window.renderScale", po::value(&window.renderScale)->default_value(0.25f), "")
-		("window.checkGLErrors", po::value(&window.checkGLErrors)->default_value(true), "");
+		;
 	
 	std::ifstream iniFile("varjo.ini");
 	po::variables_map vm;

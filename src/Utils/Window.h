@@ -5,9 +5,11 @@
 
 #include <map>
 
+#include "Core/Renderer.h"
+#include "Core/Scene.h"
 #include "Utils/FpsCounter.h"
 #include "Utils/Film.h"
-#include "Core/Renderer.h"
+#include "Utils/InfoPanel.h"
 
 struct GLFWwindow;
 
@@ -33,6 +35,7 @@ namespace Varjo
 
 		void run();
 
+		GLFWwindow* getGlfwWindow() const;
 		uint32_t getWindowWidth() const;
 		uint32_t getWindowHeight() const;
 		const MouseInfo& getMouseInfo() const;
@@ -76,5 +79,7 @@ namespace Varjo
 		Film film;
 		Renderer renderer;
 		FpsCounter fpsCounter;
+		InfoPanel infoPanel;
+		Scene scene;
 	};
 }

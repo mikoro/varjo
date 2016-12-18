@@ -3,11 +3,22 @@
 
 #pragma once
 
+#include "Math/Vector3.h"
+
 namespace Varjo
 {
+	class Ray;
+	class Intersection;
+	class AABB;
+
 	class Sphere
 	{
 	public:
 
+		CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection);
+		AABB getAABB() const;
+		
+		Vector3 position;
+		float radius = 1.0;
 	};
 }

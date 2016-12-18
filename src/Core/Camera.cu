@@ -9,7 +9,6 @@
 #include "Utils/Log.h"
 #include "Core/Camera.h"
 #include "Math/MathUtils.h"
-#include "Math/ONB.h"
 
 using namespace Varjo;
 
@@ -175,11 +174,9 @@ void Camera::update(float timeStep)
 
 	orientation.clampPitch();
 	orientation.normalize();
-
-	ONB onb = ONB::fromNormal(orientation.getDirection());
-	right = onb.u;
-	up = onb.v;
-	forward = onb.w;
+	forward = orientation.getDirection();
+	right = forward.cross(Vector3::almostUp()).normalized();
+	up = right.cross(forward).normalized();
 
 	// MISC
 
