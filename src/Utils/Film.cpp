@@ -3,7 +3,6 @@
 
 #include <GL/gl3w.h>
 #include <cuda_gl_interop.h>
-#include <device_launch_parameters.h>
 
 #include "Film.h"
 #include "Utils/GLUtils.h"
@@ -29,7 +28,92 @@ void Film::initialize()
 
 	GLUtils::checkError("Could not set OpenGL texture parameters");
 
-	programId = GLUtils::buildProgram("data/shaders/film.vert", "data/shaders/film.frag");
+	std::string vertexShaderString =
+	R"DELIM(#version 330
+
+	layout(location = 0) in vec2 position;
+	layout(location = 1) in vec2 texcoord;
+
+	out vec2 texcoordVarying;
+
+	void main()
+	{
+		texcoordVarying = texcoord;
+		gl_Position = vec4(position, 0.0f, 1.0f);
+	})DELIM";
+
+	std::string fragmentShaderString =
+	R"DELIM(#version 330
+
+	in vec2 texcoordVarying;
+
+	out vec4 color;
+
+	uniform sampler2D tex0;
+	uniform float textureWidth;
+	uniform float textureHeight;
+	uniform float texelWidth;
+	uniform float texelHeight;
+
+	// mitchell-netravali filter
+	float filter(float x)
+	{
+		x = abs(x);
+
+		const float B = 1.0f / 3.0f;
+		const float C = 1.0f / 3.0f;
+	
+		if (x < 1.0f)
+			return ((12.0f - 9.0f * B - 6.0f * C) * (x * x * x) + (-18.0f + 12.0f * B + 6.0f * C) * (x * x) + (6.0f - 2.0f * B)) * (1.0f / 6.0f);
+		else
+			return ((-B - 6.0f * C) * (x * x * x) + (6.0f * B + 30.0f * C) * (x * x) + (-12.0f * B - 48.0f * C) * x + (8.0f * B + 24.0f * C)) * (1.0f / 6.0f);
+	}
+
+	void main()
+	{
+		// coordinates on the sampled texture [0 .. width/height]
+		float tx = texcoordVarying.x * textureWidth;
+		float ty = texcoordVarying.y * textureHeight;
+	
+		// texel centered coordinates on the sampled texture [0 .. 1]
+		float ctx = (floor(tx) + 0.5f) / textureWidth;
+		float cty = (floor(ty) + 0.5f) / textureHeight;
+		vec2 center = vec2(ctx, cty);
+	
+		// interpolation value within a pixel [0 .. 1]
+		float ax = fract(tx);
+		float ay = fract(ty);
+	
+		vec4 cumulativeColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		vec4 cumulativeFilterWeight = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	
+		for(int x = -1; x <= 2; x++)
+		{
+			for(int y = -1; y <= 2; y++)
+			{
+				// texel offset
+				float ofx = texelWidth * float(x);
+				float ofy = texelHeight * float(y);
+				vec2 offset = vec2(ofx, ofy);
+			
+				// evaluate the texel color
+				vec4 c = texture(tex0, center + offset);
+			
+				// evaluate the filter weight
+				// argument will be in range [-2.0 .. 2.0]
+				float wx = filter(float(x) - ax);
+				float wy = filter((float(y) - ay));
+				vec4 w = vec4(wx, wx, wx, wx) * vec4(wy, wy, wy, wy);
+			
+				cumulativeColor += c * w;
+				cumulativeFilterWeight += w;
+			}
+		}
+	
+		color = cumulativeColor / cumulativeFilterWeight;
+	})DELIM";
+
+	programId = GLUtils::buildProgramFromString(vertexShaderString, fragmentShaderString);
 
 	textureUniformId = glGetUniformLocation(programId, "tex0");
 	textureWidthUniformId = glGetUniformLocation(programId, "textureWidth");

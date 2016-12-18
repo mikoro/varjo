@@ -13,7 +13,8 @@ namespace Varjo
 	{
 	public:
 
-		static GLuint buildProgram(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+		static GLuint buildProgramFromFile(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+		static GLuint buildProgramFromString(const std::string& vertexShaderString, const std::string& fragmentShaderString);
 		static void checkError(const std::string& message);
 		static std::string getErrorMessage(int32_t result);
 	};

@@ -13,16 +13,21 @@
 
 using namespace Varjo;
 
-GLuint GLUtils::buildProgram(const std::string& vertexShaderPath, const std::string& fragmentShaderPath)
+GLuint GLUtils::buildProgramFromFile(const std::string& vertexShaderPath, const std::string& fragmentShaderPath)
+{
+	std::string vertexShaderString = StringUtils::readFileToString(vertexShaderPath);
+	std::string fragmentShaderString = StringUtils::readFileToString(fragmentShaderPath);
+	
+	return buildProgramFromString(vertexShaderString, fragmentShaderString);
+}
+
+GLuint GLUtils::buildProgramFromString(const std::string& vertexShaderString, const std::string& fragmentShaderString)
 {
 	Log& log = App::getLog();
 
-	log.logInfo("Building vertex and fragment shaders (%s, %s)", vertexShaderPath, fragmentShaderPath);
+	log.logInfo("Building vertex and fragment shaders");
 
-	std::string vertexShaderString = StringUtils::readFileToString(vertexShaderPath);
 	const GLchar* vertexShaderStringPtr = vertexShaderString.c_str();
-
-	std::string fragmentShaderString = StringUtils::readFileToString(fragmentShaderPath);
 	const GLchar* fragmentShaderStringPtr = fragmentShaderString.c_str();
 
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
