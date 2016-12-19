@@ -189,7 +189,7 @@ void Film::render()
 {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureId);
-
+	
 	glUseProgram(programId);
 	glUniform1i(textureUniformId, 0);
 	glUniform1f(textureWidthUniformId, float(width));

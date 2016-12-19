@@ -127,12 +127,14 @@
   <ItemGroup>
     <ClInclude Include="src\Common.h" />
     <ClInclude Include="src\Core\AABB.h" />
+    <ClInclude Include="src\Core\BVH.h" />
     <ClInclude Include="src\Core\Camera.h" />
     <ClInclude Include="src\Core\Color.h" />
     <ClInclude Include="src\Core\Intersection.h" />
     <ClInclude Include="src\Core\Random.h" />
     <ClInclude Include="src\Core\Ray.h" />
     <ClInclude Include="src\Core\Renderer.h" />
+    <ClInclude Include="src\Core\Sampler.h" />
     <ClInclude Include="src\Core\Scene.h" />
     <ClInclude Include="src\Core\Sphere.h" />
     <ClInclude Include="src\Math\EulerAngle.h" />
@@ -163,11 +165,13 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\Core\AABB.cu" />
+    <CudaCompile Include="src\Core\BVH.cu" />
     <CudaCompile Include="src\Core\Camera.cu" />
     <CudaCompile Include="src\Core\Color.cu" />
     <CudaCompile Include="src\Core\Random.cu" />
     <CudaCompile Include="src\Core\Ray.cu" />
     <CudaCompile Include="src\Core\Renderer.cu" />
+    <CudaCompile Include="src\Core\Sampler.cu" />
     <CudaCompile Include="src\Core\Scene.cu" />
     <CudaCompile Include="src\Core\Sphere.cu" />
     <CudaCompile Include="src\Math\EulerAngle.cu" />

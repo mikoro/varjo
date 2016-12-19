@@ -8,7 +8,7 @@
 
 using namespace Varjo;
 
-CUDA_CALLABLE bool Sphere::intersect(const Ray& ray, Intersection& intersection)
+CUDA_CALLABLE bool Sphere::intersect(const Ray& ray, Intersection& intersection) const
 {
 	Vector3 rayOriginToSphere = position - ray.origin;
 	float rayOriginToSphereDistance2 = rayOriginToSphere.lengthSquared();

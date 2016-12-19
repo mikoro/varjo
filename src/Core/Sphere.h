@@ -15,7 +15,7 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection);
+		CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection) const;
 		AABB getAABB() const;
 		
 		Vector3 position;

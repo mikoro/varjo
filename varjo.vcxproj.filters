@@ -151,6 +151,12 @@
     <ClInclude Include="src\Utils\InfoPanel.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\BVH.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Sampler.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Utils\Log.inl">
@@ -201,6 +207,12 @@
       <Filter>Core</Filter>
     </CudaCompile>
     <CudaCompile Include="src\Core\Renderer.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\BVH.cu">
+      <Filter>Core</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\Core\Sampler.cu">
       <Filter>Core</Filter>
     </CudaCompile>
   </ItemGroup>

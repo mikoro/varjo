@@ -8,6 +8,8 @@
 #include <GL/glcorearb.h>
 #include <cuda_runtime.h>
 
+#include "Core/Color.h"
+
 /*
 The idea of the film is to reserve memory on the GPU as a OpenGL texture.
 The texture can be smaller than the actual window size.
