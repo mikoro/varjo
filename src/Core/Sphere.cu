@@ -44,6 +44,7 @@ CUDA_CALLABLE bool Sphere::intersect(const Ray& ray, Intersection& intersection)
 	Vector3 ip = ray.origin + (t * ray.direction);
 	Vector3 normal = (ip - position).normalized();
 
+	intersection.wasFound = true;
 	intersection.distance = t;
 	intersection.position = ip;
 	intersection.normal = normal;

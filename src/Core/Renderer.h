@@ -5,12 +5,24 @@
 
 namespace Varjo
 {
+	class Scene;
+	class Sphere;
+	struct BVHNode;
+	class Camera;
+
 	class Renderer
 	{
 	public:
 
-		void initialize();
+		void initialize(const Scene& scene);
 		void shutdown();
+		void update(const Scene& scene);
 		void render();
+
+	private:
+
+		Sphere* primitives = nullptr;
+		BVHNode* nodes = nullptr;
+		Camera* camera = nullptr;
 	};
 }

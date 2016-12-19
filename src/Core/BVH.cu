@@ -231,7 +231,7 @@ void BVH::build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives)
 	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, primitives/leaf: %.2f)", timer.getElapsed().getString(true), nodeCount - leafCount, leafCount, float(primitiveCount) / float(leafCount));
 }
 
-CUDA_CALLABLE bool BVH::intersect(const Ray& ray, Intersection& intersection, const BVHNode* nodes, const Sphere* primitives)
+CUDA_CALLABLE bool BVH::intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes)
 {
 	uint32_t stack[64];
 	uint32_t stackIndex = 0;

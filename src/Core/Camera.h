@@ -19,13 +19,13 @@ namespace Varjo
 	public:
 
 		void initialize();
-		void setImagePlaneSize(uint32_t width, uint32_t height);
+		void setFilmSize(uint32_t width, uint32_t height);
 		void update(float timeStep);
 		void reset();
 		bool isMoving() const;
 		void saveState(const std::string& fileName) const;
 
-		CUDA_CALLABLE Ray getRay(const Vector2& pixel) const;
+		CUDA_CALLABLE Ray getRay(const Vector2& pointOnFilm) const;
 		Vector3 getRight() const;
 		Vector3 getUp() const;
 		Vector3 getForward() const;
@@ -34,8 +34,6 @@ namespace Varjo
 		EulerAngle orientation;
 
 		float fov = 75.0f;
-		float apertureSize = 0.1f;
-		float focalDistance = 10.0f;
 		float moveSpeed = 10.0f;
 		float mouseSpeed = 40.0f;
 		float moveDrag = 3.0f;
@@ -52,17 +50,15 @@ namespace Varjo
 	private:
 
 		bool cameraIsMoving = false;
-		float aspectRatio = 1.0f;
-		float imagePlaneWidth = 0.0f;
-		float imagePlaneHeight = 0.0f;
 		float currentSpeedModifier = 1.0f;
 
 		Vector3 right;
 		Vector3 up;
 		Vector3 forward;
-		Vector3 imagePlaneCenter;
-		Vector2 imageCenter;
-
+		Vector3 filmCenter;
+		float filmWidth = 0.0f;
+		float filmHeight = 0.0f;
+		
 		Vector3 velocity;
 		Vector3 smoothVelocity;
 		Vector3 smoothAcceleration;

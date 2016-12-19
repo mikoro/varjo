@@ -15,8 +15,12 @@ namespace Varjo
 	{
 	public:
 
-		std::vector<BVHNode> nodes;
+		static Scene createTestScene1();
+
+		void initialize();
+
 		std::vector<Sphere> primitives;
+		std::vector<BVHNode> nodes;
 		Camera camera;
 	};
 }

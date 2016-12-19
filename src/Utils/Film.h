@@ -32,7 +32,7 @@ namespace Varjo
 		uint32_t getHeight() const;
 		uint32_t getLength() const;
 
-		cudaGraphicsResource* getTexture() const;
+		cudaGraphicsResource* getTextureResource() const;
 
 	private:
 
@@ -50,6 +50,6 @@ namespace Varjo
 		GLuint texelWidthUniformId = 0;
 		GLuint texelHeightUniformId = 0;
 
-		cudaGraphicsResource* texture = nullptr;
+		cudaGraphicsResource* textureResource = nullptr;
 	};
 }

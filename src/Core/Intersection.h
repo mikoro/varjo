@@ -14,6 +14,7 @@ namespace Varjo
 	{
 	public:
 
+		bool wasFound = false;
 		float distance = FLT_MAX;
 		
 		Vector3 position;

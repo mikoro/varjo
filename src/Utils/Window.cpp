@@ -81,8 +81,11 @@ void Window::run()
 	if (settings.window.hideCursor)
 		glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	scene = Scene::createTestScene1();
+	scene.initialize();
+
 	film.initialize();
-	renderer.initialize();
+	renderer.initialize(scene);
 	infoPanel.initialize();
 	infoPanel.setState(InfoPanelState(settings.general.infoPanelState));
 	windowResized(settings.window.width, settings.window.height);
@@ -272,6 +275,7 @@ void Window::update(float timeStep)
 	}
 
 	scene.camera.update(timeStep);
+	renderer.update(scene);
 }
 
 void Window::render(float timeStep, float interpolation)
@@ -338,4 +342,5 @@ void Window::resizeFilm()
 	filmHeight = MAX(uint32_t(1), filmHeight);
 
 	film.resize(filmWidth, filmHeight);
+	scene.camera.setFilmSize(filmWidth, filmHeight);
 }

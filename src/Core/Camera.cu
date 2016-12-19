@@ -19,12 +19,10 @@ void Camera::initialize()
 	originalFov = fov;
 }
 
-void Camera::setImagePlaneSize(uint32_t width, uint32_t height)
+void Camera::setFilmSize(uint32_t width, uint32_t height)
 {
-	imagePlaneWidth = float(width - 1);
-	imagePlaneHeight = float(height - 1);
-	aspectRatio = float(height) / float(width);
-	imageCenter = Vector2(float(width / 2), float(height / 2));
+	filmWidth = float(width);
+	filmHeight = float(height);
 }
 
 void Camera::reset()
@@ -181,8 +179,8 @@ void Camera::update(float timeStep)
 	// MISC
 
 	fov = MAX(1.0f, MIN(fov, 180.0f));
-	float imagePlaneDistance = 0.5f / std::tan(MathUtils::degToRad(fov / 2.0f));
-	imagePlaneCenter = position + (forward * imagePlaneDistance);
+	float filmDistance = (filmWidth / 2.0f) / std::tan(MathUtils::degToRad(fov / 2.0f));
+	filmCenter = position + (forward * filmDistance);
 }
 
 bool Camera::isMoving() const
@@ -216,17 +214,17 @@ void Camera::saveState(const std::string& fileName) const
 	file.close();
 }
 
-CUDA_CALLABLE Ray Camera::getRay(const Vector2& pixel) const
+CUDA_CALLABLE Ray Camera::getRay(const Vector2& pointOnFilm) const
 {
 	Ray ray;
 	
-	float dx = (pixel.x / imagePlaneWidth) - 0.5f;
-	float dy = (pixel.y / imagePlaneHeight) - 0.5f;
+	float dx = pointOnFilm.x - filmWidth / 2.0f;
+	float dy = pointOnFilm.y - filmHeight / 2.0f;
 
-	Vector3 imagePlanePixelPosition = imagePlaneCenter + (dx * right) + (dy * aspectRatio * up);
+	Vector3 positionOnFilm = filmCenter + (dx * right) + (dy * up);
 
 	ray.origin = position;
-	ray.direction = (imagePlanePixelPosition - position).normalized();
+	ray.direction = (positionOnFilm - position).normalized();
 	ray.precalculate();
 
 	return ray;

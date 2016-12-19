@@ -151,10 +151,10 @@ void Film::initialize()
 
 void Film::shutdown()
 {
-	if (texture != nullptr)
+	if (textureResource != nullptr)
 	{
-		CudaUtils::checkError(cudaGraphicsUnregisterResource(texture), "Could not unregister OpenGL texture for CUDA");
-		texture = nullptr;
+		CudaUtils::checkError(cudaGraphicsUnregisterResource(textureResource), "Could not unregister OpenGL texture for CUDA");
+		textureResource = nullptr;
 	}
 
 	glDeleteTextures(1, &textureId);
@@ -170,10 +170,10 @@ void Film::resize(uint32_t width_, uint32_t height_)
 
 	App::getLog().logInfo("Resizing film to %sx%s", width, height);
 
-	if (texture != nullptr)
+	if (textureResource != nullptr)
 	{
-		CudaUtils::checkError(cudaGraphicsUnregisterResource(texture), "Could not unregister OpenGL texture for CUDA");
-		texture = nullptr;
+		CudaUtils::checkError(cudaGraphicsUnregisterResource(textureResource), "Could not unregister OpenGL texture for CUDA");
+		textureResource = nullptr;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, textureId);
@@ -182,7 +182,7 @@ void Film::resize(uint32_t width_, uint32_t height_)
 
 	GLUtils::checkError("Could not reserve OpenGL texture memory");
 
-	CudaUtils::checkError(cudaGraphicsGLRegisterImage(&texture, textureId, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsSurfaceLoadStore), "Could not register OpenGL texture for CUDA");
+	CudaUtils::checkError(cudaGraphicsGLRegisterImage(&textureResource, textureId, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsSurfaceLoadStore), "Could not register OpenGL texture for CUDA");
 }
 
 void Film::render()
@@ -222,7 +222,7 @@ uint32_t Film::getLength() const
 	return length;
 }
 
-cudaGraphicsResource* Film::getTexture() const
+cudaGraphicsResource* Film::getTextureResource() const
 {
-	return texture;
+	return textureResource;
 }

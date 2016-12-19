@@ -30,6 +30,6 @@ namespace Varjo
 	public:
 
 		static void build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives);
-		static CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection, const BVHNode* nodes, const Sphere* primitives);
+		static CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes);
 	};
 }
