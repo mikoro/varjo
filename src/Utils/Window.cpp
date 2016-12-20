@@ -85,11 +85,15 @@ void Window::run()
 	scene.initialize();
 
 	film.initialize();
+	windowResized(settings.window.width, settings.window.height);
+
 	renderer.initialize(scene);
+
 	infoPanel.initialize();
 	infoPanel.setState(InfoPanelState(settings.general.infoPanelState));
-	windowResized(settings.window.width, settings.window.height);
+	
 	mainloop();
+
 	renderer.shutdown();
 	film.shutdown();
 }

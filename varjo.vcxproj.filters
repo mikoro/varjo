@@ -162,6 +162,7 @@
     <None Include="src\Utils\Log.inl">
       <Filter>Utils</Filter>
     </None>
+    <None Include="nsight1.nvact" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\Core\AABB.cu">

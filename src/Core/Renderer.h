@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <device_launch_parameters.h>
+
 namespace Varjo
 {
 	class Scene;
@@ -24,5 +26,11 @@ namespace Varjo
 		Sphere* primitives = nullptr;
 		BVHNode* nodes = nullptr;
 		Camera* camera = nullptr;
+
+		dim3 clearKernelBlockDim;
+		dim3 clearKernelGridDim;
+
+		dim3 traceKernelBlockDim;
+		dim3 traceKernelGridDim;
 	};
 }
