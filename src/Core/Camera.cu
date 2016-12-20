@@ -214,20 +214,19 @@ void Camera::saveState(const std::string& fileName) const
 	file.close();
 }
 
-CUDA_CALLABLE Ray Camera::getRay(const Vector2& pointOnFilm) const
+CameraData Camera::getCameraData() const
 {
-	Ray ray;
-	
-	float dx = pointOnFilm.x - filmWidth / 2.0f;
-	float dy = pointOnFilm.y - filmHeight / 2.0f;
+	CameraData data;
 
-	Vector3 positionOnFilm = filmCenter + (dx * right) + (dy * up);
+	data.position = make_float3(position.x, position.y, position.z);
+	data.right = make_float3(right.x, right.y, right.z);
+	data.up = make_float3(up.x, up.y, up.z);
+	data.forward = make_float3(forward.x, forward.y, forward.z);
+	data.filmCenter = make_float3(filmCenter.x, filmCenter.y, filmCenter.z);
+	data.halfFilmWidth = filmWidth / 2.0f;
+	data.halfFilmHeight = filmHeight / 2.0f;
 
-	ray.origin = position;
-	ray.direction = (positionOnFilm - position).normalized();
-	ray.precalculate();
-
-	return ray;
+	return data;
 }
 
 Vector3 Camera::getRight() const

@@ -14,7 +14,7 @@ Scene Scene::createTestScene1()
 		for (int x = -10; x <= 10; x += 2)
 		{
 			Sphere sphere;
-			sphere.position = Vector3(float(x), float(y), 0.0f);
+			//sphere.position = Vector3(float(x), float(y), 0.0f);
 			sphere.radius = 1.0f;
 			scene.primitives.push_back(sphere);
 		}

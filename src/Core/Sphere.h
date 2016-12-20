@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Math/Vector3.h"
+#include "Common.h"
 
 namespace Varjo
 {
@@ -15,10 +15,9 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection) const;
 		AABB getAABB() const;
 		
-		Vector3 position;
-		float radius = 1.0;
+		float3 position;
+		float radius;
 	};
 }

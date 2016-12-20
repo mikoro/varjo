@@ -6,7 +6,6 @@
 #include <cfloat>
 
 #include "Common.h"
-#include "Math/Vector3.h"
 
 namespace Varjo
 {
@@ -14,17 +13,9 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE void precalculate();
-
-		Vector3 origin;
-		Vector3 direction;
-		Vector3 inverseDirection;
-
+		float3 origin;
+		float3 direction;
 		float minDistance = 0.0f;
 		float maxDistance = FLT_MAX;
-
-		bool isVisibilityRay = false;
-		bool isPrimaryRay = false;
-		bool directionIsNegative[3];
 	};
 }

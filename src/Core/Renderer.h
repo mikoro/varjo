@@ -10,7 +10,7 @@ namespace Varjo
 	class Scene;
 	class Sphere;
 	struct BVHNode;
-	class Camera;
+	struct CameraData;
 
 	class Renderer
 	{
@@ -25,7 +25,7 @@ namespace Varjo
 
 		Sphere* primitives = nullptr;
 		BVHNode* nodes = nullptr;
-		Camera* camera = nullptr;
+		CameraData* camera = nullptr;
 
 		dim3 clearKernelBlockDim;
 		dim3 clearKernelGridDim;

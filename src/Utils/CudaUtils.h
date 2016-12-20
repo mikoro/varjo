@@ -4,7 +4,8 @@
 #pragma once
 
 #include <string>
-#include <cuda_runtime.h>
+
+#include <Common.h>
 
 namespace Varjo
 {

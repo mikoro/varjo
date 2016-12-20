@@ -5,8 +5,7 @@
 
 #include <cfloat>
 
-#include "Math/Vector3.h"
-#include "Math/Vector2.h"
+#include <Common.h>
 
 namespace Varjo
 {
@@ -14,11 +13,10 @@ namespace Varjo
 	{
 	public:
 
-		bool wasFound = false;
+		float3 position;
+		float3 normal;
+		float2 texcoord;
 		float distance = FLT_MAX;
-		
-		Vector3 position;
-		Vector3 normal;
-		Vector2 texcoord;
+		bool wasFound = false;
 	};
 }

@@ -14,6 +14,17 @@ namespace Varjo
 	class Random;
 	class ONB;
 
+	struct CameraData
+	{
+		float3 position;
+		float3 right;
+		float3 up;
+		float3 forward;
+		float3 filmCenter;
+		float halfFilmWidth;
+		float halfFilmHeight;
+	};
+
 	class Camera
 	{
 	public:
@@ -25,7 +36,8 @@ namespace Varjo
 		bool isMoving() const;
 		void saveState(const std::string& fileName) const;
 
-		CUDA_CALLABLE Ray getRay(const Vector2& pointOnFilm) const;
+		CameraData getCameraData() const;
+		
 		Vector3 getRight() const;
 		Vector3 getUp() const;
 		Vector3 getForward() const;

@@ -249,8 +249,8 @@ CUDA_CALLABLE bool BVH::intersect(const Ray& ray, Intersection& intersection, co
 		{
 			for (uint32_t i = 0; i < node.primitiveCount; ++i)
 			{
-				if (primitives[node.primitiveOffset + i].intersect(ray, intersection))
-					wasFound = true;
+				//if (primitives[node.primitiveOffset + i].intersect(ray, intersection))
+				//	wasFound = true;
 			}
 
 			continue;
@@ -258,12 +258,12 @@ CUDA_CALLABLE bool BVH::intersect(const Ray& ray, Intersection& intersection, co
 
 		if (node.aabb.intersects(ray))
 		{
-			if (ray.directionIsNegative[node.splitAxis])
+			//if (ray.directionIsNegative[node.splitAxis])
 			{
 				stack[stackIndex++] = nodeIndex + 1; // left child
 				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
 			}
-			else
+			//else
 			{
 				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
 				stack[stackIndex++] = nodeIndex + 1; // left child

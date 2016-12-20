@@ -2,8 +2,6 @@
 // License: MIT, see the LICENSE file.
 
 #include <cstdint>
-#include <cuda_runtime.h>
-#include <helper_math.h>
 
 #include "Core/Renderer.h"
 #include "Core/Intersection.h"
@@ -19,12 +17,7 @@ namespace
 		int blockSize;
 		int minGridSize;
 
-		cudaOccupancyMaxPotentialBlockSize(
-			&minGridSize,
-			&blockSize,
-			kernel,
-			0,
-			film.getLength());
+		cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, film.getLength());
 
 		assert(blockSize % 32 == 0);
 
@@ -35,6 +28,43 @@ namespace
 		gridDim.y = (film.getHeight() + blockDim.y - 1) / blockDim.y;
 
 		App::getLog().logInfo("Kernel (%s) block size: %d (%dx%d) | grid size: %d (%dx%d)", name, blockSize, blockDim.x, blockDim.y, gridDim.x * gridDim.y, gridDim.x, gridDim.y);
+	}
+
+	__device__ Ray getRay(float2 pointOnFilm, const CameraData& camera)
+	{
+		float dx = pointOnFilm.x - camera.halfFilmWidth;
+		float dy = pointOnFilm.y - camera.halfFilmHeight;
+
+		float3 positionOnFilm = camera.filmCenter + (dx * camera.right) + (dy * camera.up);
+
+		Ray ray;
+		ray.origin = camera.position;
+		ray.direction = normalize(positionOnFilm - camera.position);
+
+		return ray;
+	}
+
+	__device__ void intersectSphere(const Sphere& sphere, const Ray& ray, Intersection& intersection)
+	{
+		float3 rayOriginToSphere = sphere.position - ray.origin;
+		float rayOriginToSphereDistance2 = dot(rayOriginToSphere, rayOriginToSphere);
+
+		float t1 = dot(rayOriginToSphere, ray.direction);
+		float sphereToRayDistance2 = rayOriginToSphereDistance2 - (t1 * t1);
+		float radius2 = sphere.radius * sphere.radius;
+
+		bool rayOriginIsOutside = (rayOriginToSphereDistance2 >= radius2);
+
+		float t2 = sqrt(radius2 - sphereToRayDistance2);
+		float t = (rayOriginIsOutside) ? (t1 - t2) : (t1 + t2);
+
+		if (t1 > 0.0f && sphereToRayDistance2 < radius2 && t < intersection.distance)
+		{
+			intersection.wasFound = true;
+			intersection.distance = t;
+			intersection.position = ray.origin + (t * ray.direction);
+			intersection.normal = normalize(intersection.position - sphere.position);
+		}
 	}
 
 	__global__ void clearKernel(cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
@@ -49,58 +79,29 @@ namespace
 		surf2Dwrite(color, film, x * sizeof(float4), y);
 	}
 
-	__global__ void traceKernel(cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
+	__global__ void traceKernel(const CameraData* cameraPtr, cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
 	{
 		uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
 		uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
 
-		float3 cameraPosition = make_float3(0.0f, 0.0f, 10.0f);
-
-		float dx = float(x) - float(filmWidth) / 2.0f;
-		float dy = float(y) - float(filmHeight) / 2.0f;
-
-		float3 positionOnFilm = make_float3(0.0f, 0.0f, -407.032135f) + (dx * make_float3(1.0f, 0.0f, 0.0f)) + (dy * make_float3(0.0f, 1.0f, 0.0f));
-		float3 rayDirection = normalize(positionOnFilm - cameraPosition);
-
-		bool wasFound = false;
-		float3 intersectionPosition;
-		float3 intersectionNormal;
-		float intersectionDistance = FLT_MAX;
+		const CameraData& camera = *cameraPtr;
+		Ray ray = getRay(make_float2(x, y), camera);
+		Intersection intersection;
 		float4 color = make_float4(0.0f, 0.0f, 0.0f, 1.0f);
 
 		for (int sy = -10; sy <= 10; sy += 2)
 		{
 			for (int sx = -10; sx <= 10; sx += 2)
 			{
-				float3 spherePosition = make_float3(sx, sy, 0.0f);
-				float3 rayOriginToSphere = spherePosition - cameraPosition;
-				float rayOriginToSphereDistance2 = dot(rayOriginToSphere, rayOriginToSphere);
-				float t1 = dot(rayOriginToSphere, rayDirection);
-				float sphereToRayDistance2 = rayOriginToSphereDistance2 - (t1 * t1);
-				float radius2 = 1.0f * 1.0f;
-				bool rayOriginIsOutside = (rayOriginToSphereDistance2 >= radius2);
-
-				float t2 = sqrt(radius2 - sphereToRayDistance2);
-				float t = (rayOriginIsOutside) ? (t1 - t2) : (t1 + t2);
-
-				if (t1 > 0.0f && sphereToRayDistance2 < radius2 && t < intersectionDistance)
-				{
-					wasFound = true;
-					intersectionDistance = t;
-					intersectionPosition = cameraPosition + (t * rayDirection);
-					intersectionNormal = normalize(intersectionPosition - spherePosition);
-				}
-
-				//intersection.texcoord.x = 0.5f + atan2(normal.z, normal.x) / (2.0f * float(M_PI));
-				//intersection.texcoord.y = 0.5f - asin(normal.y) / float(M_PI);
+				Sphere sphere;
+				sphere.position = make_float3(sx, sy, 0.0f);
+				sphere.radius = 1.0f;
+				intersectSphere(sphere, ray, intersection);
 			}
 		}
 
-		if (wasFound)
-			color = make_float4(1.0f, 0.0f, 0.0f, 1.0f) * dot(rayDirection, -intersectionNormal);
-
-		//if (wasFound)
-		//	color = make_float4(1.0f, 0.0f, 0.0f, 1.0f);
+		if (intersection.wasFound)
+			color = make_float4(1.0f, 0.0f, 0.0f, 1.0f) * dot(ray.direction, -intersection.normal);
 
 		surf2Dwrite(color, film, x * sizeof(float4), y, cudaBoundaryModeZero);
 	}
@@ -108,15 +109,17 @@ namespace
 
 void Renderer::initialize(const Scene& scene)
 {
-	const Film& film = App::getWindow().getFilm();
-
 	CudaUtils::checkError(cudaMalloc(&primitives, sizeof(Sphere) * scene.primitives.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMalloc(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMalloc(&camera, sizeof(Camera)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
+
+	CameraData cameraData = scene.camera.getCameraData();
 
 	CudaUtils::checkError(cudaMemcpy(primitives, scene.primitives.data(), sizeof(Sphere) * scene.primitives.size(), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
 	CudaUtils::checkError(cudaMemcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size(), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
-	CudaUtils::checkError(cudaMemcpy(camera, &scene.camera, sizeof(Camera), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
+	CudaUtils::checkError(cudaMemcpy(camera, &cameraData, sizeof(CameraData), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
+
+	const Film& film = App::getWindow().getFilm();
 
 	calculateDimensions(static_cast<void*>(clearKernel), "clear", film, clearKernelBlockDim, clearKernelGridDim);
 	calculateDimensions(static_cast<void*>(traceKernel), "trace", film, traceKernelBlockDim, traceKernelGridDim);
@@ -131,7 +134,9 @@ void Renderer::shutdown()
 
 void Renderer::update(const Scene& scene)
 {
-	CudaUtils::checkError(cudaMemcpy(camera, &scene.camera, sizeof(Camera), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
+	CameraData cameraData = scene.camera.getCameraData();
+
+	CudaUtils::checkError(cudaMemcpy(camera, &cameraData, sizeof(CameraData), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
 }
 
 void Renderer::render()
@@ -152,7 +157,7 @@ void Renderer::render()
 	CudaUtils::checkError(cudaCreateSurfaceObject(&filmSurfaceObject, &filmResourceDesc), "Could not create CUDA surface object");
 
 	//clearKernel<<<clearKernelGridDim, clearKernelBlockDim>>>(filmSurfaceObject, film.getWidth(), film.getHeight());
-	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(filmSurfaceObject, film.getWidth(), film.getHeight());
+	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(camera, filmSurfaceObject, film.getWidth(), film.getHeight());
 
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
