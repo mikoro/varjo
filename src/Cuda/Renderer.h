@@ -19,6 +19,7 @@ namespace Varjo
 		void initialize(const Scene& scene);
 		void shutdown();
 		void update(const Scene& scene);
+		void filmResized(uint32_t width, uint32_t height);
 		void render();
 
 	private:

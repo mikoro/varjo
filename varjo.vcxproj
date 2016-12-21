@@ -66,12 +66,14 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <AdditionalOptions>/bigobj /Zm200 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4313;4127;4505</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>cudart_static.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/NODEFAULTLIB:msvcrt.lib %(AdditionalOptions)</AdditionalOptions>
+      <ImportLibrary>$(IntDir)varjo.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
       <Command>platform\windows\post-build.bat Debug</Command>
@@ -79,8 +81,8 @@
     <CudaCompile>
       <CodeGeneration>compute_52,sm_52</CodeGeneration>
       <AdditionalOptions>-Wno-deprecated-gpu-targets %(AdditionalOptions)</AdditionalOptions>
-      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <FastMath>true</FastMath>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,11 +94,13 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <AdditionalOptions>/bigobj /Zm200 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4313;4127;4505</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalDependencies>cudart_static.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImportLibrary>$(IntDir)varjo.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
       <Command>platform\windows\post-build.bat Release</Command>
@@ -104,8 +108,8 @@
     <CudaCompile>
       <CodeGeneration>compute_52,sm_52</CodeGeneration>
       <AdditionalOptions>-Wno-deprecated-gpu-targets %(AdditionalOptions)</AdditionalOptions>
-      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <FastMath>true</FastMath>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -128,7 +132,6 @@
     <ClCompile Include="src\Utils\App.cpp" />
     <ClCompile Include="src\Utils\InfoPanel.cpp" />
     <ClCompile Include="src\Utils\Window.cpp" />
-    <ClCompile Include="src\Utils\CudaUtils.cpp" />
     <ClCompile Include="src\Utils\Film.cpp" />
     <ClCompile Include="src\Utils\FpsCounter.cpp" />
     <ClCompile Include="src\Utils\GLUtils.cpp" />
@@ -145,6 +148,7 @@
     <ClInclude Include="src\Core\Camera.h" />
     <ClInclude Include="src\Core\Sampler.h" />
     <ClInclude Include="src\Core\Scene.h" />
+    <ClInclude Include="src\Cuda\CudaUtils.h" />
     <ClInclude Include="src\Cuda\Renderer.h" />
     <ClInclude Include="src\Cuda\Structs.h" />
     <ClInclude Include="src\Math\EulerAngle.h" />
@@ -157,7 +161,6 @@
     <ClInclude Include="src\Utils\App.h" />
     <ClInclude Include="src\Utils\InfoPanel.h" />
     <ClInclude Include="src\Utils\Window.h" />
-    <ClInclude Include="src\Utils\CudaUtils.h" />
     <ClInclude Include="src\Utils\Film.h" />
     <ClInclude Include="src\Utils\FpsCounter.h" />
     <ClInclude Include="src\Utils\GLUtils.h" />
@@ -175,6 +178,7 @@
     <None Include="src\Utils\Log.inl" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="src\Cuda\CudaUtils.cu" />
     <CudaCompile Include="src\Cuda\Renderer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

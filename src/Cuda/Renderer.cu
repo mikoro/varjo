@@ -8,31 +8,13 @@
 
 #include "Cuda/Renderer.h"
 #include "Cuda/Structs.h"
-#include "Utils/CudaUtils.h"
+#include "Cuda/CudaUtils.h"
 #include "Utils/App.h"
 
 using namespace Varjo;
 
 namespace
 {
-	void calculateDimensions(const void* kernel, const char* name, uint32_t width, uint32_t height, dim3& blockDim, dim3& gridDim)
-	{
-		int blockSize;
-		int minGridSize;
-
-		cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, width * height);
-
-		assert(blockSize % 32 == 0);
-
-		blockDim.x = 32;
-		blockDim.y = blockSize / 32;
-
-		gridDim.x = (width + blockDim.x - 1) / blockDim.x;
-		gridDim.y = (height + blockDim.y - 1) / blockDim.y;
-
-		App::getLog().logInfo("Kernel (%s) block size: %d (%dx%d) | grid size: %d (%dx%d)", name, blockSize, blockDim.x, blockDim.y, gridDim.x * gridDim.y, gridDim.x, gridDim.y);
-	}
-
 	__device__ Ray getRay(float2 pointOnFilm, const CameraData& camera)
 	{
 		float dx = pointOnFilm.x - camera.halfFilmWidth;
@@ -97,8 +79,6 @@ namespace
 			intersectSphere(primitives[i], ray, intersection);
 		}
 
-
-
 		if (intersection.wasFound)
 			color = make_float4(1.0f, 0.0f, 0.0f, 1.0f) * dot(ray.direction, -intersection.normal);
 
@@ -117,11 +97,6 @@ void Renderer::initialize(const Scene& scene)
 	memcpy(primitives, scene.primitives.data(), sizeof(Sphere) * scene.primitives.size());
 	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
 	memcpy(camera, &cameraData, sizeof(CameraData));
-
-	const Film& film = App::getWindow().getFilm();
-
-	calculateDimensions(static_cast<void*>(clearKernel), "clear", film.getWidth(), film.getHeight(), clearKernelBlockDim, clearKernelGridDim);
-	calculateDimensions(static_cast<void*>(traceKernel), "trace", film.getWidth(), film.getHeight(), traceKernelBlockDim, traceKernelGridDim);
 }
 
 void Renderer::shutdown()
@@ -136,6 +111,12 @@ void Renderer::update(const Scene& scene)
 	CameraData cameraData = scene.camera.getCameraData();
 
 	memcpy(camera, &cameraData, sizeof(CameraData));
+}
+
+void Renderer::filmResized(uint32_t width, uint32_t height)
+{
+	CudaUtils::calculateDimensions(static_cast<void*>(clearKernel), "clear", width, height, clearKernelBlockDim, clearKernelGridDim);
+	CudaUtils::calculateDimensions(static_cast<void*>(traceKernel), "trace", width, height, traceKernelBlockDim, traceKernelGridDim);
 }
 
 void Renderer::render()

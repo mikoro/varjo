@@ -170,9 +170,16 @@ void InfoPanel::renderFull(const Scene& scene)
 	nvgText(context, currentX, currentY, tfm::format("Window: %dx%d (%dx%d)", tempWindowWidth, tempWindowHeight, tempFramebufferWidth, tempFramebufferHeight).c_str(), nullptr);
 	currentY += lineSpacing;
 
-	float totalPixels = float(film.getWidth() * film.getWidth());
+	float totalPixels = float(film.getWidth() * film.getHeight());
 
 	nvgText(context, currentX, currentY, tfm::format("Film: %dx%d (%.2fx) (%s)", film.getWidth(), film.getHeight(), settings.general.filmScale, StringUtils::humanizeNumber(totalPixels)).c_str(), nullptr);
+	currentY += lineSpacing;
+
+	int32_t filmMouseX = MAX(int32_t(0), MIN(window.getMouseInfo().filmX, int32_t(film.getWidth() - 1)));
+	int32_t filmMouseY = MAX(int32_t(0), MIN(window.getMouseInfo().filmY, int32_t(film.getHeight() - 1)));;
+	int32_t filmMouseIndex = filmMouseY * film.getWidth() + filmMouseX;
+
+	nvgText(context, currentX, currentY, tfm::format("Mouse: (%d, %d, %d)", filmMouseX, filmMouseY, filmMouseIndex).c_str(), nullptr);
 	currentY += lineSpacing;
 
 	nvgText(context, currentX, currentY, tfm::format("Position: (%.2f, %.2f, %.2f)", scene.camera.position.x, scene.camera.position.y, scene.camera.position.z).c_str(), nullptr);
@@ -183,12 +190,5 @@ void InfoPanel::renderFull(const Scene& scene)
 	currentY += lineSpacing;
 
 	nvgText(context, currentX, currentY, tfm::format("Rotation: (%.2f, %.2f, %.2f)", scene.camera.orientation.pitch, scene.camera.orientation.yaw, scene.camera.orientation.roll).c_str(), nullptr);
-	currentY += lineSpacing;
-
-	int32_t filmMouseX = MAX(int32_t(0), MIN(window.getMouseInfo().filmX, int32_t(film.getWidth() - 1)));
-	int32_t filmMouseY = MAX(int32_t(0), MIN(window.getMouseInfo().filmY, int32_t(film.getHeight() - 1)));;
-	int32_t filmMouseIndex = filmMouseY * film.getWidth() + filmMouseX;
-
-	nvgText(context, currentX, currentY, tfm::format("Mouse: (%d, %d, %d)", filmMouseX, filmMouseY, filmMouseIndex).c_str(), nullptr);
 	currentY += lineSpacing;
 }

@@ -347,4 +347,5 @@ void Window::resizeFilm()
 
 	film.resize(filmWidth, filmHeight);
 	scene.camera.setFilmSize(filmWidth, filmHeight);
+	renderer.filmResized(filmWidth, filmHeight);
 }
