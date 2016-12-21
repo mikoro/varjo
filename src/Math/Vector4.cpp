@@ -9,120 +9,120 @@
 
 using namespace Varjo;
 
-CUDA_CALLABLE Vector4::Vector4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_)
+Vector4::Vector4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_)
 {
 }
 
-CUDA_CALLABLE Vector4::Vector4(const Vector3& v, float w_) : x(v.x), y(v.y), z(v.z), w(w_)
+Vector4::Vector4(const Vector3& v, float w_) : x(v.x), y(v.y), z(v.z), w(w_)
 {
 }
 
 namespace Varjo
 {
-	CUDA_CALLABLE Vector4 operator+(const Vector4& v, const Vector4& w)
+	Vector4 operator+(const Vector4& v, const Vector4& w)
 	{
 		return Vector4(v.x + w.x, v.y + w.y, v.z + w.z, v.w + w.w);
 	}
 
-	CUDA_CALLABLE Vector4 operator-(const Vector4& v, const Vector4& w)
+	Vector4 operator-(const Vector4& v, const Vector4& w)
 	{
 		return Vector4(v.x - w.x, v.y - w.y, v.z - w.z, v.w - w.w);
 	}
 
-	CUDA_CALLABLE Vector4 operator*(const Vector4& v, const Vector4& w)
+	Vector4 operator*(const Vector4& v, const Vector4& w)
 	{
 		return Vector4(v.x * w.x, v.y * w.y, v.z * w.z, v.w * w.w);
 	}
 
-	CUDA_CALLABLE Vector4 operator*(const Vector4& v, float s)
+	Vector4 operator*(const Vector4& v, float s)
 	{
 		return Vector4(v.x * s, v.y * s, v.z * s, v.w * s);
 	}
 
-	CUDA_CALLABLE Vector4 operator*(float s, const Vector4& v)
+	Vector4 operator*(float s, const Vector4& v)
 	{
 		return Vector4(v.x * s, v.y * s, v.z * s, v.w * s);
 	}
 
-	CUDA_CALLABLE Vector4 operator/(const Vector4& v, const Vector4& w)
+	Vector4 operator/(const Vector4& v, const Vector4& w)
 	{
 		return Vector4(v.x / w.x, v.y / w.y, v.z / w.z, v.w / w.w);
 	}
 
-	CUDA_CALLABLE Vector4 operator/(const Vector4& v, float s)
+	Vector4 operator/(const Vector4& v, float s)
 	{
 		float invS = 1.0f / s;
 		return Vector4(v.x * invS, v.y * invS, v.z * invS, v.w * invS);
 	}
 
-	CUDA_CALLABLE Vector4 operator-(const Vector4& v)
+	Vector4 operator-(const Vector4& v)
 	{
 		return Vector4(-v.x, -v.y, -v.z, -v.w);
 	}
 
-	CUDA_CALLABLE bool operator==(const Vector4& v, const Vector4& w)
+	bool operator==(const Vector4& v, const Vector4& w)
 	{
 		return MathUtils::almostSame(v.x, w.x) && MathUtils::almostSame(v.y, w.y) && MathUtils::almostSame(v.z, w.z) && MathUtils::almostSame(v.w, w.w);
 	}
 
-	CUDA_CALLABLE bool operator!=(const Vector4& v, const Vector4& w)
+	bool operator!=(const Vector4& v, const Vector4& w)
 	{
 		return !(v == w);
 	}
 
-	CUDA_CALLABLE bool operator>(const Vector4& v, const Vector4& w)
+	bool operator>(const Vector4& v, const Vector4& w)
 	{
 		return v.x > w.x && v.y > w.y && v.z > w.z && v.w > w.w;
 	}
 
-	CUDA_CALLABLE bool operator<(const Vector4& v, const Vector4& w)
+	bool operator<(const Vector4& v, const Vector4& w)
 	{
 		return v.x < w.x && v.y < w.y && v.z < w.z && v.w < w.w;
 	}
 }
 
-CUDA_CALLABLE Vector4& Vector4::operator+=(const Vector4& v)
+Vector4& Vector4::operator+=(const Vector4& v)
 {
 	*this = *this + v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector4& Vector4::operator-=(const Vector4& v)
+Vector4& Vector4::operator-=(const Vector4& v)
 {
 	*this = *this - v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector4& Vector4::operator*=(const Vector4& v)
+Vector4& Vector4::operator*=(const Vector4& v)
 {
 	*this = *this * v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector4& Vector4::operator*=(float s)
+Vector4& Vector4::operator*=(float s)
 {
 	*this = *this * s;
 	return *this;
 }
 
-CUDA_CALLABLE Vector4& Vector4::operator/=(const Vector4& v)
+Vector4& Vector4::operator/=(const Vector4& v)
 {
 	*this = *this / v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector4& Vector4::operator/=(float s)
+Vector4& Vector4::operator/=(float s)
 {
 	*this = *this / s;
 	return *this;
 }
 
-CUDA_CALLABLE float Vector4::operator[](uint32_t index) const
+float Vector4::operator[](uint32_t index) const
 {
 	return (&x)[index];
 }
 
-CUDA_CALLABLE float Vector4::getElement(uint32_t index) const
+float Vector4::getElement(uint32_t index) const
 {
 	switch (index)
 	{
@@ -134,7 +134,7 @@ CUDA_CALLABLE float Vector4::getElement(uint32_t index) const
 	}
 }
 
-CUDA_CALLABLE void Vector4::setElement(uint32_t index, float value)
+void Vector4::setElement(uint32_t index, float value)
 {
 	switch (index)
 	{
@@ -146,37 +146,37 @@ CUDA_CALLABLE void Vector4::setElement(uint32_t index, float value)
 	}
 }
 
-CUDA_CALLABLE float Vector4::length() const
+float Vector4::length() const
 {
 	return std::sqrt(x * x + y * y + z * z + w * w);
 }
 
-CUDA_CALLABLE float Vector4::lengthSquared() const
+float Vector4::lengthSquared() const
 {
 	return (x * x + y * y + z * z + w * w);
 }
 
-CUDA_CALLABLE void Vector4::normalizeLength()
+void Vector4::normalizeLength()
 {
 	*this /= length();
 }
 
-CUDA_CALLABLE Vector4 Vector4::normalizedLength() const
+Vector4 Vector4::normalizedLength() const
 {
 	return *this / length();
 }
 
-CUDA_CALLABLE void Vector4::normalizeForm()
+void Vector4::normalizeForm()
 {
 	*this /= w;
 }
 
-CUDA_CALLABLE Vector4 Vector4::normalizedForm() const
+Vector4 Vector4::normalizedForm() const
 {
 	return *this / w;
 }
 
-CUDA_CALLABLE void Vector4::inverse()
+void Vector4::inverse()
 {
 	x = 1.0f / x;
 	y = 1.0f / y;
@@ -184,7 +184,7 @@ CUDA_CALLABLE void Vector4::inverse()
 	w = 1.0f / w;
 }
 
-CUDA_CALLABLE Vector4 Vector4::inversed() const
+Vector4 Vector4::inversed() const
 {
 	Vector4 inverse;
 
@@ -196,7 +196,7 @@ CUDA_CALLABLE Vector4 Vector4::inversed() const
 	return inverse;
 }
 
-CUDA_CALLABLE bool Vector4::isZero() const
+bool Vector4::isZero() const
 {
 	return (x == 0.0f && y == 0.0f && z == 0.0f && w == 0.0f);
 }
@@ -206,28 +206,28 @@ bool Vector4::isNan() const
 	return (std::isnan(x) || std::isnan(y) || std::isnan(z) || std::isnan(w));
 }
 
-CUDA_CALLABLE bool Vector4::isNormal() const
+bool Vector4::isNormal() const
 {
 	return MathUtils::almostSame(lengthSquared(), 1.0f);
 }
 
-CUDA_CALLABLE float Vector4::dot(const Vector4& v) const
+float Vector4::dot(const Vector4& v) const
 {
 	return (x * v.x) + (y * v.y) + (z * v.z) + (w * v.w);
 }
 
-CUDA_CALLABLE Vector3 Vector4::toVector3() const
+Vector3 Vector4::toVector3() const
 {
 	return Vector3(x, y, z);
 }
 
-CUDA_CALLABLE Vector4 Vector4::lerp(const Vector4& v1, const Vector4& v2, float t)
+Vector4 Vector4::lerp(const Vector4& v1, const Vector4& v2, float t)
 {
 	assert(t >= 0.0f && t <= 1.0f);
 	return v1 * (1.0f - t) + v2 * t;
 }
 
-CUDA_CALLABLE Vector4 Vector4::abs(const Vector4& v)
+Vector4 Vector4::abs(const Vector4& v)
 {
 	return Vector4(std::abs(v.x), std::abs(v.y), std::abs(v.z), std::abs(v.w));
 }

@@ -6,15 +6,11 @@
 #include <cstdint>
 #include <vector>
 
-#include "Common.h"
 #include "Core/AABB.h"
-#include "Math/Vector3.h"
 
 namespace Varjo
 {
-	class Sphere;
-	class Ray;
-	class Intersection;
+	struct Sphere;
 
 	struct BVHNode
 	{
@@ -30,6 +26,6 @@ namespace Varjo
 	public:
 
 		static void build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives);
-		static CUDA_CALLABLE bool intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes);
+		//static bool intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes);
 	};
 }

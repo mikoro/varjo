@@ -4,7 +4,6 @@
 #include <cfloat>
 
 #include "Core/AABB.h"
-#include "Core/Ray.h"
 
 using namespace Varjo;
 
@@ -49,38 +48,6 @@ AABB AABB::createFromVertices(const Vector3& v0, const Vector3& v1, const Vector
 	max_.z = MAX(v0.z, MAX(v1.z, v2.z));
 
 	return AABB::createFromMinMax(min_, max_);
-}
-
-// http://tavianator.com/fast-branchless-raybounding-box-intersections-part-2-nans/
-CUDA_CALLABLE bool AABB::intersects(const Ray& ray) const
-{
-	float tmin = 0;
-	float tmax = 0;
-	float tymin = 0;
-	float tymax = 0;
-
-	if (tmin > tymax || tymin > tmax)
-		return false;
-
-	if (tymin > tmin)
-		tmin = tymin;
-
-	if (tymax < tmax)
-		tmax = tymax;
-
-	float tzmin = 0;
-	float tzmax = 0;
-
-	if (tmin > tzmax || tzmin > tmax)
-		return false;
-
-	if (tzmin > tmin)
-		tmin = tzmin;
-
-	if (tzmax < tmax)
-		tmax = tzmax;
-
-	return (tmin < ray.maxDistance) && (tmax > ray.minDistance);
 }
 
 void AABB::expand(const AABB& other)

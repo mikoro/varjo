@@ -3,28 +3,12 @@
 
 #pragma once
 
-#include "Common.h"
-#include "Core/Ray.h"
-#include "Math/Vector2.h"
 #include "Math/Vector3.h"
 #include "Math/EulerAngle.h"
+#include "Cuda/Structs.h"
 
 namespace Varjo
 {
-	class Random;
-	class ONB;
-
-	struct CameraData
-	{
-		float3 position;
-		float3 right;
-		float3 up;
-		float3 forward;
-		float3 filmCenter;
-		float halfFilmWidth;
-		float halfFilmHeight;
-	};
-
 	class Camera
 	{
 	public:

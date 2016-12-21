@@ -7,51 +7,51 @@
 
 using namespace Varjo;
 
-CUDA_CALLABLE EulerAngle::EulerAngle(float pitch_, float yaw_, float roll_) : pitch(pitch_), yaw(yaw_), roll(roll_)
+EulerAngle::EulerAngle(float pitch_, float yaw_, float roll_) : pitch(pitch_), yaw(yaw_), roll(roll_)
 {
 }
 
 namespace Varjo
 {
-	CUDA_CALLABLE EulerAngle operator+(const EulerAngle& e1, const EulerAngle& e2)
+	EulerAngle operator+(const EulerAngle& e1, const EulerAngle& e2)
 	{
 		return EulerAngle(e1.pitch + e2.pitch, e1.yaw + e2.yaw, e1.roll + e2.roll);
 	}
 
-	CUDA_CALLABLE EulerAngle operator-(const EulerAngle& e1, const EulerAngle& e2)
+	EulerAngle operator-(const EulerAngle& e1, const EulerAngle& e2)
 	{
 		return EulerAngle(e1.pitch - e2.pitch, e1.yaw - e2.yaw, e1.roll - e2.roll);
 	}
 
-	CUDA_CALLABLE EulerAngle operator*(const EulerAngle& e, float s)
+	EulerAngle operator*(const EulerAngle& e, float s)
 	{
 		return EulerAngle(e.pitch * s, e.yaw * s, e.roll * s);
 	}
 
-	CUDA_CALLABLE EulerAngle operator*(float s, const EulerAngle& e)
+	EulerAngle operator*(float s, const EulerAngle& e)
 	{
 		return EulerAngle(e.pitch * s, e.yaw * s, e.roll * s);
 	}
 
-	CUDA_CALLABLE EulerAngle operator-(const EulerAngle& e)
+	EulerAngle operator-(const EulerAngle& e)
 	{
 		return EulerAngle(-e.pitch, -e.yaw, -e.roll);
 	}
 }
 
-CUDA_CALLABLE EulerAngle& EulerAngle::operator+=(const EulerAngle& e)
+EulerAngle& EulerAngle::operator+=(const EulerAngle& e)
 {
 	*this = *this + e;
 	return *this;
 }
 
-CUDA_CALLABLE EulerAngle& EulerAngle::operator-=(const EulerAngle& e)
+EulerAngle& EulerAngle::operator-=(const EulerAngle& e)
 {
 	*this = *this - e;
 	return *this;
 }
 
-CUDA_CALLABLE void EulerAngle::clampPitch()
+void EulerAngle::clampPitch()
 {
 	if (pitch > 89.0f)
 		pitch = 89.0f;
@@ -60,7 +60,7 @@ CUDA_CALLABLE void EulerAngle::clampPitch()
 		pitch = -89.0f;
 }
 
-CUDA_CALLABLE void EulerAngle::normalize()
+void EulerAngle::normalize()
 {
 	while (std::abs(pitch) > 180.0f)
 		pitch += (pitch > 0.0f) ? -360.0f : 360.0f;
@@ -72,7 +72,7 @@ CUDA_CALLABLE void EulerAngle::normalize()
 		roll += (roll > 0.0f) ? -360.0f : 360.0f;
 }
 
-CUDA_CALLABLE Vector3 EulerAngle::getDirection() const
+Vector3 EulerAngle::getDirection() const
 {
 	Vector3 result;
 
@@ -84,7 +84,7 @@ CUDA_CALLABLE Vector3 EulerAngle::getDirection() const
 	return result.normalized();
 }
 
-CUDA_CALLABLE EulerAngle EulerAngle::lerp(const EulerAngle& e1, const EulerAngle& e2, float t)
+EulerAngle EulerAngle::lerp(const EulerAngle& e1, const EulerAngle& e2, float t)
 {
 	EulerAngle result;
 	float oneMinusT = 1.0f - t;

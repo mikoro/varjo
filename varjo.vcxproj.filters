@@ -16,6 +16,9 @@
     <Filter Include="Core">
       <UniqueIdentifier>{349ac0fd-0e47-4a26-9332-8b69ba1d2c25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Cuda">
+      <UniqueIdentifier>{038a2b3a-5eb8-4e3f-a600-19a2db4c8d3e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\External\gl3w.cpp">
@@ -64,6 +67,42 @@
     <ClCompile Include="src\Utils\InfoPanel.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\AABB.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\BVH.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Camera.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Sampler.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Scene.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\EulerAngle.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\MathUtils.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\Matrix4x4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\MovingAverage.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\Vector2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\Vector3.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\Vector4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\FpsCounter.h">
@@ -91,22 +130,31 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Common.h" />
+    <ClInclude Include="src\Utils\Film.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Window.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\App.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\InfoPanel.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\AABB.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\BVH.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Camera.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Color.h">
+    <ClInclude Include="src\Core\Sampler.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Intersection.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Random.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Ray.h">
+    <ClInclude Include="src\Core\Scene.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Math\EulerAngle.h">
@@ -130,32 +178,11 @@
     <ClInclude Include="src\Math\Vector4.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Scene.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Cuda\Renderer.h">
+      <Filter>Cuda</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Sphere.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Renderer.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utils\Film.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utils\Window.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utils\App.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utils\InfoPanel.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\BVH.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Sampler.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Cuda\Structs.h">
+      <Filter>Cuda</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -165,61 +192,13 @@
     <None Include="nsight1.nvact" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\Core\AABB.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Camera.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Color.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Random.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Ray.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\EulerAngle.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\MathUtils.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\Matrix4x4.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\MovingAverage.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\Vector2.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\Vector3.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Math\Vector4.cu">
-      <Filter>Math</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Scene.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Sphere.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Renderer.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\BVH.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Core\Sampler.cu">
-      <Filter>Core</Filter>
-    </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="platform\windows\varjo.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="src\Cuda\Renderer.cu">
+      <Filter>Cuda</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

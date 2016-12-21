@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Core/BVH.h"
-#include "Core/Sphere.h"
 #include "Core/Camera.h"
 
 namespace Varjo

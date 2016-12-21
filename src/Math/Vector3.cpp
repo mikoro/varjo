@@ -9,120 +9,120 @@
 
 using namespace Varjo;
 
-CUDA_CALLABLE Vector3::Vector3(float x_, float y_, float z_) : x(x_), y(y_), z(z_)
+Vector3::Vector3(float x_, float y_, float z_) : x(x_), y(y_), z(z_)
 {
 }
 
-CUDA_CALLABLE Vector3::Vector3(const Vector4& v) : x(v.x), y(v.y), z(v.z)
+Vector3::Vector3(const Vector4& v) : x(v.x), y(v.y), z(v.z)
 {
 }
 
 namespace Varjo
 {
-	CUDA_CALLABLE Vector3 operator+(const Vector3& v, const Vector3& w)
+	Vector3 operator+(const Vector3& v, const Vector3& w)
 	{
 		return Vector3(v.x + w.x, v.y + w.y, v.z + w.z);
 	}
 
-	CUDA_CALLABLE Vector3 operator-(const Vector3& v, const Vector3& w)
+	Vector3 operator-(const Vector3& v, const Vector3& w)
 	{
 		return Vector3(v.x - w.x, v.y - w.y, v.z - w.z);
 	}
 
-	CUDA_CALLABLE Vector3 operator*(const Vector3& v, const Vector3& w)
+	Vector3 operator*(const Vector3& v, const Vector3& w)
 	{
 		return Vector3(v.x * w.x, v.y * w.y, v.z * w.z);
 	}
 
-	CUDA_CALLABLE Vector3 operator*(const Vector3& v, float s)
+	Vector3 operator*(const Vector3& v, float s)
 	{
 		return Vector3(v.x * s, v.y * s, v.z * s);
 	}
 
-	CUDA_CALLABLE Vector3 operator*(float s, const Vector3& v)
+	Vector3 operator*(float s, const Vector3& v)
 	{
 		return Vector3(v.x * s, v.y * s, v.z * s);
 	}
 
-	CUDA_CALLABLE Vector3 operator/(const Vector3& v, const Vector3& w)
+	Vector3 operator/(const Vector3& v, const Vector3& w)
 	{
 		return Vector3(v.x / w.x, v.y / w.y, v.z / w.z);
 	}
 
-	CUDA_CALLABLE Vector3 operator/(const Vector3& v, float s)
+	Vector3 operator/(const Vector3& v, float s)
 	{
 		float invS = 1.0f / s;
 		return Vector3(v.x * invS, v.y * invS, v.z * invS);
 	}
 
-	CUDA_CALLABLE Vector3 operator-(const Vector3& v)
+	Vector3 operator-(const Vector3& v)
 	{
 		return Vector3(-v.x, -v.y, -v.z);
 	}
 
-	CUDA_CALLABLE bool operator==(const Vector3& v, const Vector3& w)
+	bool operator==(const Vector3& v, const Vector3& w)
 	{
 		return MathUtils::almostSame(v.x, w.x) && MathUtils::almostSame(v.y, w.y) && MathUtils::almostSame(v.z, w.z);
 	}
 
-	CUDA_CALLABLE bool operator!=(const Vector3& v, const Vector3& w)
+	bool operator!=(const Vector3& v, const Vector3& w)
 	{
 		return !(v == w);
 	}
 
-	CUDA_CALLABLE bool operator>(const Vector3& v, const Vector3& w)
+	bool operator>(const Vector3& v, const Vector3& w)
 	{
 		return v.x > w.x && v.y > w.y && v.z > w.z;
 	}
 
-	CUDA_CALLABLE bool operator<(const Vector3& v, const Vector3& w)
+	bool operator<(const Vector3& v, const Vector3& w)
 	{
 		return v.x < w.x && v.y < w.y && v.z < w.z;
 	}
 }
 
-CUDA_CALLABLE Vector3& Vector3::operator+=(const Vector3& v)
+Vector3& Vector3::operator+=(const Vector3& v)
 {
 	*this = *this + v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector3& Vector3::operator-=(const Vector3& v)
+Vector3& Vector3::operator-=(const Vector3& v)
 {
 	*this = *this - v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector3& Vector3::operator*=(const Vector3& v)
+Vector3& Vector3::operator*=(const Vector3& v)
 {
 	*this = *this * v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector3& Vector3::operator*=(float s)
+Vector3& Vector3::operator*=(float s)
 {
 	*this = *this * s;
 	return *this;
 }
 
-CUDA_CALLABLE Vector3& Vector3::operator/=(const Vector3& v)
+Vector3& Vector3::operator/=(const Vector3& v)
 {
 	*this = *this / v;
 	return *this;
 }
 
-CUDA_CALLABLE Vector3& Vector3::operator/=(float s)
+Vector3& Vector3::operator/=(float s)
 {
 	*this = *this / s;
 	return *this;
 }
 
-CUDA_CALLABLE float Vector3::operator[](uint32_t index) const
+float Vector3::operator[](uint32_t index) const
 {
 	return (&x)[index];
 }
 
-CUDA_CALLABLE float Vector3::getElement(uint32_t index) const
+float Vector3::getElement(uint32_t index) const
 {
 	switch (index)
 	{
@@ -133,7 +133,7 @@ CUDA_CALLABLE float Vector3::getElement(uint32_t index) const
 	}
 }
 
-CUDA_CALLABLE void Vector3::setElement(uint32_t index, float value)
+void Vector3::setElement(uint32_t index, float value)
 {
 	switch (index)
 	{
@@ -144,34 +144,34 @@ CUDA_CALLABLE void Vector3::setElement(uint32_t index, float value)
 	}
 }
 
-CUDA_CALLABLE float Vector3::length() const
+float Vector3::length() const
 {
 	return std::sqrt(x * x + y * y + z * z);
 }
 
-CUDA_CALLABLE float Vector3::lengthSquared() const
+float Vector3::lengthSquared() const
 {
 	return (x * x + y * y + z * z);
 }
 
-CUDA_CALLABLE void Vector3::normalize()
+void Vector3::normalize()
 {
 	*this /= length();
 }
 
-CUDA_CALLABLE Vector3 Vector3::normalized() const
+Vector3 Vector3::normalized() const
 {
 	return *this / length();
 }
 
-CUDA_CALLABLE void Vector3::inverse()
+void Vector3::inverse()
 {
 	x = 1.0f / x;
 	y = 1.0f / y;
 	z = 1.0f / z;
 }
 
-CUDA_CALLABLE Vector3 Vector3::inversed() const
+Vector3 Vector3::inversed() const
 {
 	Vector3 inverse;
 
@@ -182,7 +182,7 @@ CUDA_CALLABLE Vector3 Vector3::inversed() const
 	return inverse;
 }
 
-CUDA_CALLABLE bool Vector3::isZero() const
+bool Vector3::isZero() const
 {
 	return (x == 0.0f && y == 0.0f && z == 0.0f);
 }
@@ -192,17 +192,17 @@ bool Vector3::isNan() const
 	return (std::isnan(x) || std::isnan(y) || std::isnan(z));
 }
 
-CUDA_CALLABLE bool Vector3::isNormal() const
+bool Vector3::isNormal() const
 {
 	return MathUtils::almostSame(lengthSquared(), 1.0f);
 }
 
-CUDA_CALLABLE float Vector3::dot(const Vector3& v) const
+float Vector3::dot(const Vector3& v) const
 {
 	return (x * v.x) + (y * v.y) + (z * v.z);
 }
 
-CUDA_CALLABLE Vector3 Vector3::cross(const Vector3& v) const
+Vector3 Vector3::cross(const Vector3& v) const
 {
 	Vector3 r;
 
@@ -213,43 +213,43 @@ CUDA_CALLABLE Vector3 Vector3::cross(const Vector3& v) const
 	return r;
 }
 
-CUDA_CALLABLE Vector3 Vector3::reflect(const Vector3& normal) const
+Vector3 Vector3::reflect(const Vector3& normal) const
 {
 	return *this - ((2.0f * this->dot(normal)) * normal);
 }
 
-CUDA_CALLABLE Vector4 Vector3::toVector4(float w_) const
+Vector4 Vector3::toVector4(float w_) const
 {
 	return Vector4(x, y, z, w_);
 }
 
-CUDA_CALLABLE Vector3 Vector3::lerp(const Vector3& v1, const Vector3& v2, float t)
+Vector3 Vector3::lerp(const Vector3& v1, const Vector3& v2, float t)
 {
 	assert(t >= 0.0f && t <= 1.0f);
 	return v1 * (1.0f - t) + v2 * t;
 }
 
-CUDA_CALLABLE Vector3 Vector3::abs(const Vector3& v)
+Vector3 Vector3::abs(const Vector3& v)
 {
 	return Vector3(std::abs(v.x), std::abs(v.y), std::abs(v.z));
 }
 
-CUDA_CALLABLE Vector3 Vector3::right()
+Vector3 Vector3::right()
 {
 	return Vector3(1.0f, 0.0f, 0.0f);
 }
 
-CUDA_CALLABLE Vector3 Vector3::up()
+Vector3 Vector3::up()
 {
 	return Vector3(0.0f, 1.0f, 0.0f);
 }
 
-CUDA_CALLABLE Vector3 Vector3::forward()
+Vector3 Vector3::forward()
 {
 	return Vector3(0.0f, 0.0f, 1.0f);
 }
 
-CUDA_CALLABLE Vector3 Vector3::almostUp()
+Vector3 Vector3::almostUp()
 {
 	return Vector3(0.000001f, 1.0f, 0.000001f);
 }

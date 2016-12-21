@@ -11,12 +11,12 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE explicit MovingAverage(float alpha = 1.0f, float average = 0.0f);
+		explicit MovingAverage(float alpha = 1.0f, float average = 0.0f);
 
-		CUDA_CALLABLE void setAlpha(float alpha);
-		CUDA_CALLABLE void setAverage(float average);
-		CUDA_CALLABLE void addMeasurement(float value);
-		CUDA_CALLABLE float getAverage() const;
+		void setAlpha(float alpha);
+		void setAverage(float average);
+		void addMeasurement(float value);
+		float getAverage() const;
 
 	private:
 

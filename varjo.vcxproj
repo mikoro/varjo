@@ -109,10 +109,22 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Core\AABB.cpp" />
+    <ClCompile Include="src\Core\BVH.cpp" />
+    <ClCompile Include="src\Core\Camera.cpp" />
+    <ClCompile Include="src\Core\Sampler.cpp" />
+    <ClCompile Include="src\Core\Scene.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\External\gl3w.cpp" />
     <ClCompile Include="src\External\nanovg.cpp" />
     <ClCompile Include="src\External\stb.cpp" />
+    <ClCompile Include="src\Math\EulerAngle.cpp" />
+    <ClCompile Include="src\Math\MathUtils.cpp" />
+    <ClCompile Include="src\Math\Matrix4x4.cpp" />
+    <ClCompile Include="src\Math\MovingAverage.cpp" />
+    <ClCompile Include="src\Math\Vector2.cpp" />
+    <ClCompile Include="src\Math\Vector3.cpp" />
+    <ClCompile Include="src\Math\Vector4.cpp" />
     <ClCompile Include="src\Utils\App.cpp" />
     <ClCompile Include="src\Utils\InfoPanel.cpp" />
     <ClCompile Include="src\Utils\Window.cpp" />
@@ -131,14 +143,10 @@
     <ClInclude Include="src\Core\AABB.h" />
     <ClInclude Include="src\Core\BVH.h" />
     <ClInclude Include="src\Core\Camera.h" />
-    <ClInclude Include="src\Core\Color.h" />
-    <ClInclude Include="src\Core\Intersection.h" />
-    <ClInclude Include="src\Core\Random.h" />
-    <ClInclude Include="src\Core\Ray.h" />
-    <ClInclude Include="src\Core\Renderer.h" />
     <ClInclude Include="src\Core\Sampler.h" />
     <ClInclude Include="src\Core\Scene.h" />
-    <ClInclude Include="src\Core\Sphere.h" />
+    <ClInclude Include="src\Cuda\Renderer.h" />
+    <ClInclude Include="src\Cuda\Structs.h" />
     <ClInclude Include="src\Math\EulerAngle.h" />
     <ClInclude Include="src\Math\MathUtils.h" />
     <ClInclude Include="src\Math\Matrix4x4.h" />
@@ -167,23 +175,7 @@
     <None Include="src\Utils\Log.inl" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\Core\AABB.cu" />
-    <CudaCompile Include="src\Core\BVH.cu" />
-    <CudaCompile Include="src\Core\Camera.cu" />
-    <CudaCompile Include="src\Core\Color.cu" />
-    <CudaCompile Include="src\Core\Random.cu" />
-    <CudaCompile Include="src\Core\Ray.cu" />
-    <CudaCompile Include="src\Core\Renderer.cu" />
-    <CudaCompile Include="src\Core\Sampler.cu" />
-    <CudaCompile Include="src\Core\Scene.cu" />
-    <CudaCompile Include="src\Core\Sphere.cu" />
-    <CudaCompile Include="src\Math\EulerAngle.cu" />
-    <CudaCompile Include="src\Math\MathUtils.cu" />
-    <CudaCompile Include="src\Math\Matrix4x4.cu" />
-    <CudaCompile Include="src\Math\MovingAverage.cu" />
-    <CudaCompile Include="src\Math\Vector2.cu" />
-    <CudaCompile Include="src\Math\Vector3.cu" />
-    <CudaCompile Include="src\Math\Vector4.cu" />
+    <CudaCompile Include="src\Cuda\Renderer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

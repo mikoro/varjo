@@ -5,7 +5,7 @@
 
 #include <map>
 
-#include "Core/Renderer.h"
+#include "Cuda/Renderer.h"
 #include "Core/Scene.h"
 #include "Utils/FpsCounter.h"
 #include "Utils/Film.h"

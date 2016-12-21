@@ -16,49 +16,49 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE explicit Vector4(float x = 0.0f, float y = 0.0f, float z = 0.0f, float w = 0.0f);
-		CUDA_CALLABLE explicit Vector4(const Vector3& v, float w = 0.0f);
+		explicit Vector4(float x = 0.0f, float y = 0.0f, float z = 0.0f, float w = 0.0f);
+		explicit Vector4(const Vector3& v, float w = 0.0f);
 
-		CUDA_CALLABLE friend Vector4 operator+(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend Vector4 operator-(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend Vector4 operator*(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend Vector4 operator*(const Vector4& v, float s);
-		CUDA_CALLABLE friend Vector4 operator*(float s, const Vector4& v);
-		CUDA_CALLABLE friend Vector4 operator/(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend Vector4 operator/(const Vector4& v, float s);
-		CUDA_CALLABLE friend Vector4 operator-(const Vector4& v);
+		friend Vector4 operator+(const Vector4& v, const Vector4& w);
+		friend Vector4 operator-(const Vector4& v, const Vector4& w);
+		friend Vector4 operator*(const Vector4& v, const Vector4& w);
+		friend Vector4 operator*(const Vector4& v, float s);
+		friend Vector4 operator*(float s, const Vector4& v);
+		friend Vector4 operator/(const Vector4& v, const Vector4& w);
+		friend Vector4 operator/(const Vector4& v, float s);
+		friend Vector4 operator-(const Vector4& v);
 
-		CUDA_CALLABLE friend bool operator==(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend bool operator!=(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend bool operator>(const Vector4& v, const Vector4& w);
-		CUDA_CALLABLE friend bool operator<(const Vector4& v, const Vector4& w);
+		friend bool operator==(const Vector4& v, const Vector4& w);
+		friend bool operator!=(const Vector4& v, const Vector4& w);
+		friend bool operator>(const Vector4& v, const Vector4& w);
+		friend bool operator<(const Vector4& v, const Vector4& w);
 
-		CUDA_CALLABLE Vector4& operator+=(const Vector4& v);
-		CUDA_CALLABLE Vector4& operator-=(const Vector4& v);
-		CUDA_CALLABLE Vector4& operator*=(const Vector4& v);
-		CUDA_CALLABLE Vector4& operator*=(float s);
-		CUDA_CALLABLE Vector4& operator/=(const Vector4& v);
-		CUDA_CALLABLE Vector4& operator/=(float s);
-		CUDA_CALLABLE float operator[](uint32_t index) const;
+		Vector4& operator+=(const Vector4& v);
+		Vector4& operator-=(const Vector4& v);
+		Vector4& operator*=(const Vector4& v);
+		Vector4& operator*=(float s);
+		Vector4& operator/=(const Vector4& v);
+		Vector4& operator/=(float s);
+		float operator[](uint32_t index) const;
 
-		CUDA_CALLABLE float getElement(uint32_t index) const;
-		CUDA_CALLABLE void setElement(uint32_t index, float value);
-		CUDA_CALLABLE float length() const;
-		CUDA_CALLABLE float lengthSquared() const;
-		CUDA_CALLABLE void normalizeLength();
-		CUDA_CALLABLE Vector4 normalizedLength() const;
-		CUDA_CALLABLE void normalizeForm();
-		CUDA_CALLABLE Vector4 normalizedForm() const;
-		CUDA_CALLABLE void inverse();
-		CUDA_CALLABLE Vector4 inversed() const;
-		CUDA_CALLABLE bool isZero() const;
+		float getElement(uint32_t index) const;
+		void setElement(uint32_t index, float value);
+		float length() const;
+		float lengthSquared() const;
+		void normalizeLength();
+		Vector4 normalizedLength() const;
+		void normalizeForm();
+		Vector4 normalizedForm() const;
+		void inverse();
+		Vector4 inversed() const;
+		bool isZero() const;
 		bool isNan() const;
-		CUDA_CALLABLE bool isNormal() const;
-		CUDA_CALLABLE float dot(const Vector4& v) const;
-		CUDA_CALLABLE Vector3 toVector3() const;
+		bool isNormal() const;
+		float dot(const Vector4& v) const;
+		Vector3 toVector3() const;
 
-		CUDA_CALLABLE static Vector4 lerp(const Vector4& v1, const Vector4& v2, float t);
-		CUDA_CALLABLE static Vector4 abs(const Vector4& v);
+		static Vector4 lerp(const Vector4& v1, const Vector4& v2, float t);
+		static Vector4 abs(const Vector4& v);
 
 		std::string toString() const;
 

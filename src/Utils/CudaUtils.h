@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include <Common.h>
+#include <cuda_runtime.h>
 
 namespace Varjo
 {

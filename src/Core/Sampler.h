@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "Common.h"
 #include "Math/Vector2.h"
 
 /*
@@ -16,6 +15,6 @@ namespace Varjo
 	{
 	public:
 
-		static CUDA_CALLABLE Vector2 getSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p);
+		static Vector2 getSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p);
 	};
 }

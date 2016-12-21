@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <device_launch_parameters.h>
+#include <cuda_runtime.h>
 
 namespace Varjo
 {
 	class Scene;
-	class Sphere;
+	struct Sphere;
 	struct BVHNode;
 	struct CameraData;
 

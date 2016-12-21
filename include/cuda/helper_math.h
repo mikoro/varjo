@@ -1378,15 +1378,15 @@ inline __host__ __device__ float4 fmodf(float4 a, float4 b)
 
 inline __host__ __device__ float2 fabs(float2 v)
 {
-    return make_float2(fabs(v.x), fabs(v.y));
+    return make_float2(float(fabs(v.x)), float(fabs(v.y)));
 }
 inline __host__ __device__ float3 fabs(float3 v)
 {
-    return make_float3(fabs(v.x), fabs(v.y), fabs(v.z));
+    return make_float3(float(fabs(v.x)), float(fabs(v.y)), float(fabs(v.z)));
 }
 inline __host__ __device__ float4 fabs(float4 v)
 {
-    return make_float4(fabs(v.x), fabs(v.y), fabs(v.z), fabs(v.w));
+    return make_float4(float(fabs(v.x)), float(fabs(v.y)), float(fabs(v.z)), float(fabs(v.w)));
 }
 
 inline __host__ __device__ int2 abs(int2 v)

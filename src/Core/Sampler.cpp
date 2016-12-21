@@ -7,7 +7,7 @@ using namespace Varjo;
 
 namespace
 {
-	CUDA_CALLABLE uint32_t permute(uint32_t i, uint32_t l, uint32_t p)
+	uint32_t permute(uint32_t i, uint32_t l, uint32_t p)
 	{
 		uint32_t w = l - 1;
 
@@ -43,7 +43,7 @@ namespace
 	}
 }
 
-CUDA_CALLABLE Vector2 Sampler::getSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p)
+Vector2 Sampler::getSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p)
 {
 	// if s is not permutated, the samples will come out in scanline order
 	s = permute(s, m * n, p * 0xa511e9b3); // not sure if the permutation value should be changed? (copied from below)

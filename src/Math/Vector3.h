@@ -16,54 +16,54 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE explicit Vector3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
-		CUDA_CALLABLE explicit Vector3(const Vector4& v);
+		explicit Vector3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		explicit Vector3(const Vector4& v);
 
-		CUDA_CALLABLE friend Vector3 operator+(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend Vector3 operator-(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend Vector3 operator*(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend Vector3 operator*(const Vector3& v, float s);
-		CUDA_CALLABLE friend Vector3 operator*(float s, const Vector3& v);
-		CUDA_CALLABLE friend Vector3 operator/(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend Vector3 operator/(const Vector3& v, float s);
-		CUDA_CALLABLE friend Vector3 operator-(const Vector3& v);
+		friend Vector3 operator+(const Vector3& v, const Vector3& w);
+		friend Vector3 operator-(const Vector3& v, const Vector3& w);
+		friend Vector3 operator*(const Vector3& v, const Vector3& w);
+		friend Vector3 operator*(const Vector3& v, float s);
+		friend Vector3 operator*(float s, const Vector3& v);
+		friend Vector3 operator/(const Vector3& v, const Vector3& w);
+		friend Vector3 operator/(const Vector3& v, float s);
+		friend Vector3 operator-(const Vector3& v);
 
-		CUDA_CALLABLE friend bool operator==(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend bool operator!=(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend bool operator>(const Vector3& v, const Vector3& w);
-		CUDA_CALLABLE friend bool operator<(const Vector3& v, const Vector3& w);
+		friend bool operator==(const Vector3& v, const Vector3& w);
+		friend bool operator!=(const Vector3& v, const Vector3& w);
+		friend bool operator>(const Vector3& v, const Vector3& w);
+		friend bool operator<(const Vector3& v, const Vector3& w);
 
-		CUDA_CALLABLE Vector3& operator+=(const Vector3& v);
-		CUDA_CALLABLE Vector3& operator-=(const Vector3& v);
-		CUDA_CALLABLE Vector3& operator*=(const Vector3& v);
-		CUDA_CALLABLE Vector3& operator*=(float s);
-		CUDA_CALLABLE Vector3& operator/=(const Vector3& v);
-		CUDA_CALLABLE Vector3& operator/=(float s);
-		CUDA_CALLABLE float operator[](uint32_t index) const;
+		Vector3& operator+=(const Vector3& v);
+		Vector3& operator-=(const Vector3& v);
+		Vector3& operator*=(const Vector3& v);
+		Vector3& operator*=(float s);
+		Vector3& operator/=(const Vector3& v);
+		Vector3& operator/=(float s);
+		float operator[](uint32_t index) const;
 
-		CUDA_CALLABLE float getElement(uint32_t index) const;
-		CUDA_CALLABLE void setElement(uint32_t index, float value);
-		CUDA_CALLABLE float length() const;
-		CUDA_CALLABLE float lengthSquared() const;
-		CUDA_CALLABLE void normalize();
-		CUDA_CALLABLE Vector3 normalized() const;
-		CUDA_CALLABLE void inverse();
-		CUDA_CALLABLE Vector3 inversed() const;
-		CUDA_CALLABLE bool isZero() const;
+		float getElement(uint32_t index) const;
+		void setElement(uint32_t index, float value);
+		float length() const;
+		float lengthSquared() const;
+		void normalize();
+		Vector3 normalized() const;
+		void inverse();
+		Vector3 inversed() const;
+		bool isZero() const;
 		bool isNan() const;
-		CUDA_CALLABLE bool isNormal() const;
-		CUDA_CALLABLE float dot(const Vector3& v) const;
-		CUDA_CALLABLE Vector3 cross(const Vector3& v) const;
-		CUDA_CALLABLE Vector3 reflect(const Vector3& normal) const;
-		CUDA_CALLABLE Vector4 toVector4(float w = 0.0f) const;
+		bool isNormal() const;
+		float dot(const Vector3& v) const;
+		Vector3 cross(const Vector3& v) const;
+		Vector3 reflect(const Vector3& normal) const;
+		Vector4 toVector4(float w = 0.0f) const;
 
-		CUDA_CALLABLE static Vector3 lerp(const Vector3& v1, const Vector3& v2, float t);
-		CUDA_CALLABLE static Vector3 abs(const Vector3& v);
+		static Vector3 lerp(const Vector3& v1, const Vector3& v2, float t);
+		static Vector3 abs(const Vector3& v);
 
-		CUDA_CALLABLE static Vector3 right();
-		CUDA_CALLABLE static Vector3 up();
-		CUDA_CALLABLE static Vector3 forward();
-		CUDA_CALLABLE static Vector3 almostUp();
+		static Vector3 right();
+		static Vector3 up();
+		static Vector3 forward();
+		static Vector3 almostUp();
 
 		std::string toString() const;
 

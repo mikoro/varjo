@@ -3,11 +3,6 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-#include <cuda/helper_math.h>
-
-#define CUDA_CALLABLE __host__ __device__
-
 #ifdef _MSC_VER
 #define ALIGN(x) __declspec(align(x))
 #elif __GNUC__

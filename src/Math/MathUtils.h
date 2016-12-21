@@ -14,13 +14,13 @@ namespace Varjo
 	{
 	public:
 
-		CUDA_CALLABLE static bool almostZero(float value, float threshold = FLT_EPSILON * 4);
-		CUDA_CALLABLE static bool almostSame(float first, float second, float threshold = FLT_EPSILON * 4);
+		static bool almostZero(float value, float threshold = FLT_EPSILON * 4);
+		static bool almostSame(float first, float second, float threshold = FLT_EPSILON * 4);
 		static bool almostSame(const std::complex<float>& first, const std::complex<float>& second, float threshold = FLT_EPSILON * 4);
-		CUDA_CALLABLE static float degToRad(float degrees);
-		CUDA_CALLABLE static float radToDeg(float radians);
-		CUDA_CALLABLE static float smoothstep(float t);
-		CUDA_CALLABLE static float smootherstep(float t);
-		CUDA_CALLABLE static float fastPow(float a, float b);
+		static float degToRad(float degrees);
+		static float radToDeg(float radians);
+		static float smoothstep(float t);
+		static float smootherstep(float t);
+		static float fastPow(float a, float b);
 	};
 }

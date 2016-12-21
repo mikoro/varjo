@@ -5,9 +5,6 @@
 #include "Utils/Log.h"
 #include "Utils/Timer.h"
 #include "Core/Scene.h"
-#include "Core/Sphere.h"
-#include "Core/Ray.h"
-#include "Core/Intersection.h"
 #include "Utils/App.h"
 
 #ifdef _WIN32
@@ -146,7 +143,8 @@ void BVH::build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives)
 
 	for (uint32_t i = 0; i < primitiveCount; ++i)
 	{
-		AABB aabb = primitives[i].getAABB();
+		//AABB aabb = primitives[i].getAABB();
+		AABB aabb;
 
 		buildPrimitives[i].primitive = &primitives[i];
 		buildPrimitives[i].aabb = aabb;
@@ -231,45 +229,45 @@ void BVH::build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives)
 	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, primitives/leaf: %.2f)", timer.getElapsed().getString(true), nodeCount - leafCount, leafCount, float(primitiveCount) / float(leafCount));
 }
 
-CUDA_CALLABLE bool BVH::intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes)
-{
-	uint32_t stack[64];
-	uint32_t stackIndex = 0;
-	bool wasFound = false;
-
-	stack[stackIndex++] = 0;
-
-	while (stackIndex > 0)
-	{
-		uint32_t nodeIndex = stack[--stackIndex];
-		const BVHNode& node = nodes[nodeIndex];
-
-		// leaf node
-		if (node.rightOffset == 0)
-		{
-			for (uint32_t i = 0; i < node.primitiveCount; ++i)
-			{
-				//if (primitives[node.primitiveOffset + i].intersect(ray, intersection))
-				//	wasFound = true;
-			}
-
-			continue;
-		}
-
-		if (node.aabb.intersects(ray))
-		{
-			//if (ray.directionIsNegative[node.splitAxis])
-			{
-				stack[stackIndex++] = nodeIndex + 1; // left child
-				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
-			}
-			//else
-			{
-				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
-				stack[stackIndex++] = nodeIndex + 1; // left child
-			}
-		}
-	}
-
-	return wasFound;
-}
+//bool BVH::intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes)
+//{
+//	uint32_t stack[64];
+//	uint32_t stackIndex = 0;
+//	bool wasFound = false;
+//
+//	stack[stackIndex++] = 0;
+//
+//	while (stackIndex > 0)
+//	{
+//		uint32_t nodeIndex = stack[--stackIndex];
+//		const BVHNode& node = nodes[nodeIndex];
+//
+//		// leaf node
+//		if (node.rightOffset == 0)
+//		{
+//			for (uint32_t i = 0; i < node.primitiveCount; ++i)
+//			{
+//				//if (primitives[node.primitiveOffset + i].intersect(ray, intersection))
+//				//	wasFound = true;
+//			}
+//
+//			continue;
+//		}
+//
+//		//if (node.aabb.intersects(ray))
+//		{
+//			//if (ray.directionIsNegative[node.splitAxis])
+//			{
+//				stack[stackIndex++] = nodeIndex + 1; // left child
+//				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
+//			}
+//			//else
+//			{
+//				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
+//				stack[stackIndex++] = nodeIndex + 1; // left child
+//			}
+//		}
+//	}
+//
+//	return wasFound;
+//}

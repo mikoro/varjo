@@ -3,8 +3,11 @@
 
 #include <cstdint>
 
-#include "Core/Renderer.h"
-#include "Core/Intersection.h"
+#include <cuda/helper_math.h>
+#include <device_launch_parameters.h>
+
+#include "Cuda/Renderer.h"
+#include "Cuda/Structs.h"
 #include "Utils/CudaUtils.h"
 #include "Utils/App.h"
 
@@ -12,20 +15,20 @@ using namespace Varjo;
 
 namespace
 {
-	void calculateDimensions(const void* kernel, const char* name, const Film& film, dim3& blockDim, dim3& gridDim)
+	void calculateDimensions(const void* kernel, const char* name, uint32_t width, uint32_t height, dim3& blockDim, dim3& gridDim)
 	{
 		int blockSize;
 		int minGridSize;
 
-		cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, film.getLength());
+		cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, width * height);
 
 		assert(blockSize % 32 == 0);
 
 		blockDim.x = 32;
 		blockDim.y = blockSize / 32;
 
-		gridDim.x = (film.getWidth() + blockDim.x - 1) / blockDim.x;
-		gridDim.y = (film.getHeight() + blockDim.y - 1) / blockDim.y;
+		gridDim.x = (width + blockDim.x - 1) / blockDim.x;
+		gridDim.y = (height + blockDim.y - 1) / blockDim.y;
 
 		App::getLog().logInfo("Kernel (%s) block size: %d (%dx%d) | grid size: %d (%dx%d)", name, blockSize, blockDim.x, blockDim.y, gridDim.x * gridDim.y, gridDim.x, gridDim.y);
 	}
@@ -79,7 +82,7 @@ namespace
 		surf2Dwrite(color, film, x * sizeof(float4), y);
 	}
 
-	__global__ void traceKernel(const CameraData* cameraPtr, cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
+	__global__ void traceKernel(const CameraData* __restrict cameraPtr, const Sphere* __restrict primitives, cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
 	{
 		uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
 		uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -89,16 +92,12 @@ namespace
 		Intersection intersection;
 		float4 color = make_float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		for (int sy = -10; sy <= 10; sy += 2)
+		for (int i = 0; i < 121; ++i)
 		{
-			for (int sx = -10; sx <= 10; sx += 2)
-			{
-				Sphere sphere;
-				sphere.position = make_float3(sx, sy, 0.0f);
-				sphere.radius = 1.0f;
-				intersectSphere(sphere, ray, intersection);
-			}
+			intersectSphere(primitives[i], ray, intersection);
 		}
+
+
 
 		if (intersection.wasFound)
 			color = make_float4(1.0f, 0.0f, 0.0f, 1.0f) * dot(ray.direction, -intersection.normal);
@@ -109,20 +108,20 @@ namespace
 
 void Renderer::initialize(const Scene& scene)
 {
-	CudaUtils::checkError(cudaMalloc(&primitives, sizeof(Sphere) * scene.primitives.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMalloc(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMalloc(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&primitives, sizeof(Sphere) * scene.primitives.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
 
 	CameraData cameraData = scene.camera.getCameraData();
 
-	CudaUtils::checkError(cudaMemcpy(primitives, scene.primitives.data(), sizeof(Sphere) * scene.primitives.size(), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
-	CudaUtils::checkError(cudaMemcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size(), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
-	CudaUtils::checkError(cudaMemcpy(camera, &cameraData, sizeof(CameraData), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
+	memcpy(primitives, scene.primitives.data(), sizeof(Sphere) * scene.primitives.size());
+	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
+	memcpy(camera, &cameraData, sizeof(CameraData));
 
 	const Film& film = App::getWindow().getFilm();
 
-	calculateDimensions(static_cast<void*>(clearKernel), "clear", film, clearKernelBlockDim, clearKernelGridDim);
-	calculateDimensions(static_cast<void*>(traceKernel), "trace", film, traceKernelBlockDim, traceKernelGridDim);
+	calculateDimensions(static_cast<void*>(clearKernel), "clear", film.getWidth(), film.getHeight(), clearKernelBlockDim, clearKernelGridDim);
+	calculateDimensions(static_cast<void*>(traceKernel), "trace", film.getWidth(), film.getHeight(), traceKernelBlockDim, traceKernelGridDim);
 }
 
 void Renderer::shutdown()
@@ -136,7 +135,7 @@ void Renderer::update(const Scene& scene)
 {
 	CameraData cameraData = scene.camera.getCameraData();
 
-	CudaUtils::checkError(cudaMemcpy(camera, &cameraData, sizeof(CameraData), cudaMemcpyHostToDevice), "Could not write data to CUDA device");
+	memcpy(camera, &cameraData, sizeof(CameraData));
 }
 
 void Renderer::render()
@@ -157,7 +156,7 @@ void Renderer::render()
 	CudaUtils::checkError(cudaCreateSurfaceObject(&filmSurfaceObject, &filmResourceDesc), "Could not create CUDA surface object");
 
 	//clearKernel<<<clearKernelGridDim, clearKernelBlockDim>>>(filmSurfaceObject, film.getWidth(), film.getHeight());
-	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(camera, filmSurfaceObject, film.getWidth(), film.getHeight());
+	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(camera, primitives, filmSurfaceObject, film.getWidth(), film.getHeight());
 
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");

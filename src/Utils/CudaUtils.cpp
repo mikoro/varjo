@@ -1,9 +1,12 @@
 // Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
+#include <cuda_runtime_api.h>
+
 #include "tinyformat/tinyformat.h"
 
 #include "Utils/CudaUtils.h"
+#include "App.h"
 
 using namespace Varjo;
 

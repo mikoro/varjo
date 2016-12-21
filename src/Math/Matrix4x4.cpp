@@ -11,12 +11,12 @@
 
 using namespace Varjo;
 
-CUDA_CALLABLE Matrix4x4::Matrix4x4()
+Matrix4x4::Matrix4x4()
 {
 	std::memset(m, 0, sizeof(float) * 16);
 }
 
-CUDA_CALLABLE Matrix4x4::Matrix4x4(float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33)
+Matrix4x4::Matrix4x4(float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33)
 {
 	m[0][0] = m00; m[0][1] = m01; m[0][2] = m02; m[0][3] = m03;
 	m[1][0] = m10; m[1][1] = m11; m[1][2] = m12; m[1][3] = m13;
@@ -24,7 +24,7 @@ CUDA_CALLABLE Matrix4x4::Matrix4x4(float m00, float m01, float m02, float m03, f
 	m[3][0] = m30; m[3][1] = m31; m[3][2] = m32; m[3][3] = m33;
 }
 
-CUDA_CALLABLE Matrix4x4::Matrix4x4(const Vector4& r, const Vector4& u, const Vector4& f, const Vector4& t)
+Matrix4x4::Matrix4x4(const Vector4& r, const Vector4& u, const Vector4& f, const Vector4& t)
 {
 	m[0][0] = r.x; m[0][1] = u.x; m[0][2] = f.x; m[0][3] = t.x;
 	m[1][0] = r.y; m[1][1] = u.y; m[1][2] = f.y; m[1][3] = t.y;
@@ -34,7 +34,7 @@ CUDA_CALLABLE Matrix4x4::Matrix4x4(const Vector4& r, const Vector4& u, const Vec
 
 namespace Varjo
 {
-	CUDA_CALLABLE Matrix4x4 operator+(const Matrix4x4& m, const Matrix4x4& n)
+	Matrix4x4 operator+(const Matrix4x4& m, const Matrix4x4& n)
 	{
 		Matrix4x4 result;
 
@@ -45,7 +45,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Matrix4x4 operator-(const Matrix4x4& m, const Matrix4x4& n)
+	Matrix4x4 operator-(const Matrix4x4& m, const Matrix4x4& n)
 	{
 		Matrix4x4 result;
 
@@ -56,7 +56,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Matrix4x4 operator*(const Matrix4x4& m, float s)
+	Matrix4x4 operator*(const Matrix4x4& m, float s)
 	{
 		Matrix4x4 result;
 
@@ -67,7 +67,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Matrix4x4 operator*(float s, const Matrix4x4& m)
+	Matrix4x4 operator*(float s, const Matrix4x4& m)
 	{
 		Matrix4x4 result;
 
@@ -78,7 +78,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Matrix4x4 operator*(const Matrix4x4& m, const Matrix4x4& n)
+	Matrix4x4 operator*(const Matrix4x4& m, const Matrix4x4& n)
 	{
 		Matrix4x4 result;
 
@@ -89,7 +89,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Vector4 operator*(const Matrix4x4& m, const Vector4& v)
+	Vector4 operator*(const Matrix4x4& m, const Vector4& v)
 	{
 		Vector4 result;
 
@@ -101,7 +101,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Matrix4x4 operator/(const Matrix4x4& m, float s)
+	Matrix4x4 operator/(const Matrix4x4& m, float s)
 	{
 		Matrix4x4 result;
 
@@ -114,7 +114,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE Matrix4x4 operator-(const Matrix4x4& m)
+	Matrix4x4 operator-(const Matrix4x4& m)
 	{
 		Matrix4x4 result;
 
@@ -125,7 +125,7 @@ namespace Varjo
 		return result;
 	}
 
-	CUDA_CALLABLE bool operator==(const Matrix4x4& m, const Matrix4x4& n)
+	bool operator==(const Matrix4x4& m, const Matrix4x4& n)
 	{
 		for (uint32_t r = 0; r <= 3; ++r)
 			for (uint32_t c = 0; c <= 3; ++c)
@@ -135,71 +135,71 @@ namespace Varjo
 		return true;
 	}
 
-	CUDA_CALLABLE bool operator!=(const Matrix4x4& m, const Matrix4x4& n)
+	bool operator!=(const Matrix4x4& m, const Matrix4x4& n)
 	{
 		return !(m == n);
 	}
 }
 
-CUDA_CALLABLE Matrix4x4& Matrix4x4::operator+=(const Matrix4x4& n)
+Matrix4x4& Matrix4x4::operator+=(const Matrix4x4& n)
 {
 	*this = *this + n;
 	return *this;
 }
 
-CUDA_CALLABLE Matrix4x4& Matrix4x4::operator-=(const Matrix4x4& n)
+Matrix4x4& Matrix4x4::operator-=(const Matrix4x4& n)
 {
 	*this = *this - n;
 	return *this;
 }
 
-CUDA_CALLABLE Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& n)
+Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& n)
 {
 	*this = *this * n;
 	return *this;
 }
 
-CUDA_CALLABLE Matrix4x4& Matrix4x4::operator*=(float s)
+Matrix4x4& Matrix4x4::operator*=(float s)
 {
 	*this = *this * s;
 	return *this;
 }
 
-CUDA_CALLABLE Matrix4x4& Matrix4x4::operator/=(float s)
+Matrix4x4& Matrix4x4::operator/=(float s)
 {
 	*this = *this / s;
 	return *this;
 }
 
-CUDA_CALLABLE Matrix4x4::operator float*()
+Matrix4x4::operator float*()
 {
 	return &m[0][0];
 }
 
-CUDA_CALLABLE Matrix4x4::operator const float*() const
+Matrix4x4::operator const float*() const
 {
 	return &m[0][0];
 }
 
-CUDA_CALLABLE float Matrix4x4::get(uint32_t row, uint32_t column) const
+float Matrix4x4::get(uint32_t row, uint32_t column) const
 {
 	assert(row <= 3 && column <= 3);
 	return m[row][column];
 }
 
-CUDA_CALLABLE void Matrix4x4::set(uint32_t row, uint32_t column, float value)
+void Matrix4x4::set(uint32_t row, uint32_t column, float value)
 {
 	assert(row <= 3 && column <= 3);
 	m[row][column] = value;
 }
 
-CUDA_CALLABLE Vector4 Matrix4x4::getRow(uint32_t index) const
+Vector4 Matrix4x4::getRow(uint32_t index) const
 {
 	assert(index <= 3);
 	return Vector4(m[index][0], m[index][1], m[index][2], m[index][3]);
 }
 
-CUDA_CALLABLE void Matrix4x4::setRow(uint32_t index, const Vector4& v)
+void Matrix4x4::setRow(uint32_t index, const Vector4& v)
 {
 	assert(index <= 3);
 
@@ -209,13 +209,13 @@ CUDA_CALLABLE void Matrix4x4::setRow(uint32_t index, const Vector4& v)
 	m[index][3] = v.w;
 }
 
-CUDA_CALLABLE Vector4 Matrix4x4::getColumn(uint32_t index) const
+Vector4 Matrix4x4::getColumn(uint32_t index) const
 {
 	assert(index <= 3);
 	return Vector4(m[0][index], m[1][index], m[2][index], m[3][index]);
 }
 
-CUDA_CALLABLE void Matrix4x4::setColumn(uint32_t index, const Vector4& v)
+void Matrix4x4::setColumn(uint32_t index, const Vector4& v)
 {
 	assert(index <= 3);
 
@@ -225,12 +225,12 @@ CUDA_CALLABLE void Matrix4x4::setColumn(uint32_t index, const Vector4& v)
 	m[3][index] = v.w;
 }
 
-CUDA_CALLABLE void Matrix4x4::transpose()
+void Matrix4x4::transpose()
 {
 	*this = transposed();
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::transposed() const
+Matrix4x4 Matrix4x4::transposed() const
 {
 	Matrix4x4 result;
 
@@ -241,12 +241,12 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::transposed() const
 	return result;
 }
 
-CUDA_CALLABLE void Matrix4x4::invert()
+void Matrix4x4::invert()
 {
 	*this = inverted();
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::inverted() const
+Matrix4x4 Matrix4x4::inverted() const
 {
 	float n[16], inv[16], out[16];
 	std::memcpy(n, m, sizeof(float) * 16);
@@ -284,7 +284,7 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::inverted() const
 	return result;
 }
 
-CUDA_CALLABLE bool Matrix4x4::isZero() const
+bool Matrix4x4::isZero() const
 {
 	for (uint32_t r = 0; r <= 3; ++r)
 	{
@@ -312,7 +312,7 @@ bool Matrix4x4::isNan() const
 	return false;
 }
 
-CUDA_CALLABLE Vector3 Matrix4x4::transformPosition(const Vector3& v) const
+Vector3 Matrix4x4::transformPosition(const Vector3& v) const
 {
 	Vector3 result;
 
@@ -323,7 +323,7 @@ CUDA_CALLABLE Vector3 Matrix4x4::transformPosition(const Vector3& v) const
 	return result;
 }
 
-CUDA_CALLABLE Vector3 Matrix4x4::transformDirection(const Vector3& v) const
+Vector3 Matrix4x4::transformDirection(const Vector3& v) const
 {
 	Vector3 result;
 
@@ -334,12 +334,12 @@ CUDA_CALLABLE Vector3 Matrix4x4::transformDirection(const Vector3& v) const
 	return result;
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::scale(const Vector3& s)
+Matrix4x4 Matrix4x4::scale(const Vector3& s)
 {
 	return scale(s.x, s.y, s.z);
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::scale(float sx, float sy, float sz)
+Matrix4x4 Matrix4x4::scale(float sx, float sy, float sz)
 {
 	Matrix4x4 result = identity();
 
@@ -350,12 +350,12 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::scale(float sx, float sy, float sz)
 	return result;
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::translate(const Vector3& t)
+Matrix4x4 Matrix4x4::translate(const Vector3& t)
 {
 	return translate(t.x, t.y, t.z);
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::translate(float tx, float ty, float tz)
+Matrix4x4 Matrix4x4::translate(float tx, float ty, float tz)
 {
 	Matrix4x4 result = identity();
 
@@ -366,27 +366,27 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::translate(float tx, float ty, float tz)
 	return result;
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateXYZ(const EulerAngle& e)
+Matrix4x4 Matrix4x4::rotateXYZ(const EulerAngle& e)
 {
 	return rotateXYZ(e.pitch, e.yaw, e.roll);
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateZYX(const EulerAngle& e)
+Matrix4x4 Matrix4x4::rotateZYX(const EulerAngle& e)
 {
 	return rotateZYX(e.pitch, e.yaw, e.roll);
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateXYZ(float pitch, float yaw, float roll)
+Matrix4x4 Matrix4x4::rotateXYZ(float pitch, float yaw, float roll)
 {
 	return rotateX(pitch) * rotateY(yaw) * rotateZ(roll);
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateZYX(float pitch, float yaw, float roll)
+Matrix4x4 Matrix4x4::rotateZYX(float pitch, float yaw, float roll)
 {
 	return rotateZ(roll) * rotateY(yaw) * rotateX(pitch);
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateX(float angle)
+Matrix4x4 Matrix4x4::rotateX(float angle)
 {
 	Matrix4x4 result = identity();
 
@@ -401,7 +401,7 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateX(float angle)
 	return result;
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateY(float angle)
+Matrix4x4 Matrix4x4::rotateY(float angle)
 {
 	Matrix4x4 result = identity();
 
@@ -416,7 +416,7 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateY(float angle)
 	return result;
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateZ(float angle)
+Matrix4x4 Matrix4x4::rotateZ(float angle)
 {
 	Matrix4x4 result = identity();
 
@@ -432,7 +432,7 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::rotateZ(float angle)
 }
 
 // http://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
-CUDA_CALLABLE Matrix4x4 Matrix4x4::rotate(const Vector3& from, const Vector3& to)
+Matrix4x4 Matrix4x4::rotate(const Vector3& from, const Vector3& to)
 {
 	Vector3 v = from.cross(to);
 	float s = v.length();
@@ -450,7 +450,7 @@ CUDA_CALLABLE Matrix4x4 Matrix4x4::rotate(const Vector3& from, const Vector3& to
 		return identity();
 }
 
-CUDA_CALLABLE Matrix4x4 Matrix4x4::identity()
+Matrix4x4 Matrix4x4::identity()
 {
 	return Matrix4x4(
 		1.0f, 0.0f, 0.0f, 0.0f,
