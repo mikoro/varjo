@@ -17,7 +17,6 @@ namespace Varjo
 		int32_t rightOffset;
 		uint32_t primitiveOffset;
 		uint32_t primitiveCount;
-		uint32_t splitAxis;
 	};
 
 	class BVH

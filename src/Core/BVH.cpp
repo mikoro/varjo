@@ -139,6 +139,7 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 	std::vector<BVHBuildPrimitive> buildPrimitives(primitiveCount);
 	std::vector<BVHSplitCache> splitCache(primitiveCount);
+	std::vector<uint32_t> leafPrimitiveCounts;
 	BVHSplitOutput splitOutput;
 
 	for (uint32_t i = 0; i < primitiveCount; ++i)
@@ -152,11 +153,11 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 	nodes.clear();
 	nodes.reserve(primitiveCount);
+	leafPrimitiveCounts.reserve(primitiveCount / 4);
 
 	BVHBuildEntry stack[128];
 	uint32_t stackIndex = 0;
 	uint32_t nodeCount = 0;
-	uint32_t leafCount = 0;
 
 	// push to stack
 	stack[stackIndex].start = 0;
@@ -175,14 +176,13 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 		node.rightOffset = -3;
 		node.primitiveOffset = uint32_t(buildEntry.start);
 		node.primitiveCount = uint32_t(buildEntry.end - buildEntry.start);
-		node.splitAxis = 0;
 
-		// leaf node
+		// set as leaf node
 		if (node.primitiveCount <= 4)
 			node.rightOffset = 0;
 
 		// update the parent rightOffset when visiting its right child
-		if (buildEntry.parent != -1)
+		if (buildEntry.parent != -1) // not root
 		{
 			uint32_t parent = uint32_t(buildEntry.parent);
 
@@ -190,10 +190,10 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 				nodes[parent].rightOffset = int32_t(nodeCount - 1 - parent);
 		}
 
+		// not a leaf node -> split
 		if (node.rightOffset != 0)
 		{
 			splitOutput = calculateSplit(buildPrimitives, splitCache, buildEntry.start, buildEntry.end);
-			node.splitAxis = uint32_t(splitOutput.axis);
 			node.aabb = splitOutput.fullAABB;
 		}
 
@@ -201,7 +201,7 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 		if (node.rightOffset == 0)
 		{
-			leafCount++;
+			leafPrimitiveCounts.push_back(node.primitiveCount);
 			continue;
 		}
 
@@ -225,7 +225,15 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 	primitives = sortedPrimitives;
 
-	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, primitives/leaf: %.2f)", timer.getElapsed().getString(true), nodeCount - leafCount, leafCount, float(primitiveCount) / float(leafCount));
+	float mean = float(primitiveCount) / float(leafPrimitiveCounts.size());
+	float std = 0.0f;
+
+	for (uint32_t i = 0; i < leafPrimitiveCounts.size(); ++i)
+		std += std::pow(float(leafPrimitiveCounts[i]) - mean, 2);
+
+	std /= float(leafPrimitiveCounts.size());
+
+	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, primitives/leaf: %.2f +- %.2f)", timer.getElapsed().getString(true), nodeCount, leafPrimitiveCounts.size(), mean, std);
 }
 
 void BVH::exportDot(std::vector<BVHNode>& nodes, const std::string& fileName)

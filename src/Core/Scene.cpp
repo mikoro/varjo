@@ -9,7 +9,7 @@ Scene Scene::createTestScene1()
 {
 	Scene scene;
 
-	scene.camera.position = Vector3(0.0f, 0.0f, 100.0f);
+	scene.camera.position = Vector3(0.01f, 0.01f, 10.0f);
 	scene.camera.fov = 75.0f;
 
 	//scene.camera.position = Vector3(1000.0f, 1000.0f, 0.0f);
@@ -34,5 +34,5 @@ void Scene::initialize()
 {
 	camera.initialize();
 	BVH::build(primitives, nodes);
-	BVH::exportDot(nodes, "bvh.gv");
+	//BVH::exportDot(nodes, "bvh.gv");
 }
