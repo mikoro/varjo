@@ -20,7 +20,7 @@ namespace Varjo
 		bool isMoving() const;
 		void saveState(const std::string& fileName) const;
 
-		CameraData getCameraData() const;
+		Cuda::Camera getCudaCamera() const;
 		
 		Vector3 getRight() const;
 		Vector3 getUp() const;

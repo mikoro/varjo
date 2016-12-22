@@ -5,8 +5,9 @@
 
 #include <vector>
 
-#include "Core/BVH.h"
 #include "Core/Camera.h"
+#include "Core/Sphere.h"
+#include "Core/BVH.h"
 
 namespace Varjo
 {
@@ -18,8 +19,8 @@ namespace Varjo
 
 		void initialize();
 
+		Camera camera;
 		std::vector<Sphere> primitives;
 		std::vector<BVHNode> nodes;
-		Camera camera;
 	};
 }

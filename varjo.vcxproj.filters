@@ -100,6 +100,9 @@
     <ClCompile Include="src\Math\Vector4.cpp">
       <Filter>Math</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Sphere.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\FpsCounter.h">
@@ -180,6 +183,9 @@
     </ClInclude>
     <ClInclude Include="src\Cuda\CudaUtils.h">
       <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Sphere.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

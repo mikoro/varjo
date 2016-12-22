@@ -12,10 +12,17 @@
 #include "Utils/App.h"
 
 using namespace Varjo;
+using namespace Cuda;
 
 namespace
 {
-	__device__ Ray getRay(float2 pointOnFilm, const CameraData& camera)
+	__device__ void initRay(Ray& ray)
+	{
+		ray.invD = make_float3(1.0, 1.0f, 1.0f) / ray.direction;
+		ray.OoD = ray.origin / ray.direction;
+	}
+
+	__device__ Ray getRay(float2 pointOnFilm, const Cuda::Camera& camera)
 	{
 		float dx = pointOnFilm.x - camera.halfFilmWidth;
 		float dy = pointOnFilm.y - camera.halfFilmHeight;
@@ -25,11 +32,12 @@ namespace
 		Ray ray;
 		ray.origin = camera.position;
 		ray.direction = normalize(positionOnFilm - camera.position);
+		initRay(ray);
 
 		return ray;
 	}
 
-	__device__ void intersectSphere(const Sphere& sphere, const Ray& ray, Intersection& intersection)
+	__device__ void intersectSphere(const Cuda::Sphere& sphere, const Ray& ray, Intersection& intersection)
 	{
 		float3 rayOriginToSphere = sphere.position - ray.origin;
 		float rayOriginToSphereDistance2 = dot(rayOriginToSphere, rayOriginToSphere);
@@ -52,6 +60,51 @@ namespace
 		}
 	}
 
+	__device__ bool intersectAabb(const Cuda::AABB& aabb, const Ray& ray)
+	{
+		float x0 = fmaf(aabb.min.x, ray.invD.x, -ray.OoD.x);
+		float y0 = fmaf(aabb.min.y, ray.invD.y, -ray.OoD.y);
+		float z0 = fmaf(aabb.min.z, ray.invD.z, -ray.OoD.z);
+		float x1 = fmaf(aabb.max.x, ray.invD.x, -ray.OoD.x);
+		float y1 = fmaf(aabb.max.y, ray.invD.y, -ray.OoD.y);
+		float z1 = fmaf(aabb.max.z, ray.invD.z, -ray.OoD.z);
+
+		float tminbox = fmaxf(fmaxf(ray.minDistance, fminf(x0, x1)), fmaxf(fminf(y0, y1), fminf(z0, z1)));
+		float tmaxbox = fminf(fminf(ray.maxDistance, fmaxf(x0, x1)), fminf(fmaxf(y0, y1), fmaxf(z0, z1)));
+		
+		return (tminbox <= tmaxbox);
+	}
+
+	__device__ void intersectBvh(const Cuda::BVHNode* __restrict nodes, const Cuda::Sphere* __restrict primitives, const Ray& ray, Intersection& intersection)
+	{
+		uint32_t stack[16];
+		uint32_t stackIndex = 1;
+		stack[0] = 0;
+
+		Cuda::BVHNode node;
+
+		while (stackIndex > 0)
+		{
+			uint32_t nodeIndex = stack[--stackIndex];
+			node = nodes[nodeIndex];
+
+			// leaf node
+			if (node.rightOffset == 0)
+			{
+				for (int i = 0; i < node.primitiveCount; ++i)
+					intersectSphere(primitives[node.primitiveOffset + i], ray, intersection);
+
+				continue;
+			}
+
+			if (intersectAabb(node.aabb, ray))
+			{
+				stack[stackIndex++] = nodeIndex + 1; // left child
+				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
+			}
+		}
+	}
+
 	__global__ void clearKernel(cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
 	{
 		uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -64,20 +117,16 @@ namespace
 		surf2Dwrite(color, film, x * sizeof(float4), y);
 	}
 
-	__global__ void traceKernel(const CameraData* __restrict cameraPtr, const Sphere* __restrict primitives, cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
+	__global__ void traceKernel(const Cuda::Camera* __restrict camera, const Cuda::Sphere* __restrict primitives, const Cuda::BVHNode* __restrict nodes, cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
 	{
 		uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
 		uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
 
-		const CameraData& camera = *cameraPtr;
-		Ray ray = getRay(make_float2(x, y), camera);
+		Ray ray = getRay(make_float2(x, y), *camera);
 		Intersection intersection;
 		float4 color = make_float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		for (int i = 0; i < 121; ++i)
-		{
-			intersectSphere(primitives[i], ray, intersection);
-		}
+		intersectBvh(nodes, primitives, ray, intersection);
 
 		if (intersection.wasFound)
 			color = make_float4(1.0f, 0.0f, 0.0f, 1.0f) * dot(ray.direction, -intersection.normal);
@@ -88,15 +137,15 @@ namespace
 
 void Renderer::initialize(const Scene& scene)
 {
+	CudaUtils::checkError(cudaMallocManaged(&camera, sizeof(Cuda::Camera)), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&primitives, sizeof(Sphere) * scene.primitives.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
 
-	CameraData cameraData = scene.camera.getCameraData();
+	Cuda::Camera cameraData = scene.camera.getCudaCamera();
 
+	memcpy(camera, &cameraData, sizeof(Cuda::Camera));
 	memcpy(primitives, scene.primitives.data(), sizeof(Sphere) * scene.primitives.size());
 	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
-	memcpy(camera, &cameraData, sizeof(CameraData));
 }
 
 void Renderer::shutdown()
@@ -108,9 +157,8 @@ void Renderer::shutdown()
 
 void Renderer::update(const Scene& scene)
 {
-	CameraData cameraData = scene.camera.getCameraData();
-
-	memcpy(camera, &cameraData, sizeof(CameraData));
+	Cuda::Camera cameraData = scene.camera.getCudaCamera();
+	memcpy(camera, &cameraData, sizeof(Cuda::Camera));
 }
 
 void Renderer::filmResized(uint32_t width, uint32_t height)
@@ -137,7 +185,7 @@ void Renderer::render()
 	CudaUtils::checkError(cudaCreateSurfaceObject(&filmSurfaceObject, &filmResourceDesc), "Could not create CUDA surface object");
 
 	//clearKernel<<<clearKernelGridDim, clearKernelBlockDim>>>(filmSurfaceObject, film.getWidth(), film.getHeight());
-	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(camera, primitives, filmSurfaceObject, film.getWidth(), film.getHeight());
+	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(camera, primitives, nodes, filmSurfaceObject, film.getWidth(), film.getHeight());
 
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");

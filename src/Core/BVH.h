@@ -7,11 +7,10 @@
 #include <vector>
 
 #include "Core/AABB.h"
+#include "Core/Sphere.h"
 
 namespace Varjo
 {
-	struct Sphere;
-
 	struct BVHNode
 	{
 		AABB aabb;
@@ -25,7 +24,7 @@ namespace Varjo
 	{
 	public:
 
-		static void build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives);
-		//static bool intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes);
+		static void build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes);
+		static void exportDot(std::vector<BVHNode>& nodes, const std::string& fileName);
 	};
 }

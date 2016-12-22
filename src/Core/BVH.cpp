@@ -122,7 +122,7 @@ namespace
 
 }
 
-void BVH::build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives)
+void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 {
 	Log& log = App::getLog();
 
@@ -143,8 +143,7 @@ void BVH::build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives)
 
 	for (uint32_t i = 0; i < primitiveCount; ++i)
 	{
-		//AABB aabb = primitives[i].getAABB();
-		AABB aabb;
+		AABB aabb = primitives[i].getAABB();
 
 		buildPrimitives[i].primitive = &primitives[i];
 		buildPrimitives[i].aabb = aabb;
@@ -229,45 +228,47 @@ void BVH::build(std::vector<BVHNode>& nodes, std::vector<Sphere>& primitives)
 	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, primitives/leaf: %.2f)", timer.getElapsed().getString(true), nodeCount - leafCount, leafCount, float(primitiveCount) / float(leafCount));
 }
 
-//bool BVH::intersect(const Ray& ray, Intersection& intersection, const Sphere* primitives, const BVHNode* nodes)
-//{
-//	uint32_t stack[64];
-//	uint32_t stackIndex = 0;
-//	bool wasFound = false;
-//
-//	stack[stackIndex++] = 0;
-//
-//	while (stackIndex > 0)
-//	{
-//		uint32_t nodeIndex = stack[--stackIndex];
-//		const BVHNode& node = nodes[nodeIndex];
-//
-//		// leaf node
-//		if (node.rightOffset == 0)
-//		{
-//			for (uint32_t i = 0; i < node.primitiveCount; ++i)
-//			{
-//				//if (primitives[node.primitiveOffset + i].intersect(ray, intersection))
-//				//	wasFound = true;
-//			}
-//
-//			continue;
-//		}
-//
-//		//if (node.aabb.intersects(ray))
-//		{
-//			//if (ray.directionIsNegative[node.splitAxis])
-//			{
-//				stack[stackIndex++] = nodeIndex + 1; // left child
-//				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
-//			}
-//			//else
-//			{
-//				stack[stackIndex++] = nodeIndex + uint32_t(node.rightOffset); // right child
-//				stack[stackIndex++] = nodeIndex + 1; // left child
-//			}
-//		}
-//	}
-//
-//	return wasFound;
-//}
+void BVH::exportDot(std::vector<BVHNode>& nodes, const std::string& fileName)
+{
+	App::getLog().logInfo("Exporting BVH structure to %s", fileName);
+
+	std::ofstream file(fileName);
+
+	if (!file.is_open())
+		throw std::runtime_error("Could not open file");
+
+	uint32_t stack[16];
+	uint32_t stackIndex = 1;
+	stack[0] = 0;
+
+	file << "digraph G {" << std::endl;
+	
+	while (stackIndex > 0)
+	{
+		uint32_t nodeIndex = stack[--stackIndex];
+		const BVHNode& node = nodes[nodeIndex];
+
+		// leaf node
+		if (node.rightOffset == 0)
+		{
+			file << tfm::format("n%d -> { ", nodeIndex);
+
+			for (uint32_t i = 0; i < node.primitiveCount; ++i)
+				file << tfm::format("t%d; ", node.primitiveOffset + i);
+
+			file << "}" << std::endl;
+
+			continue;
+		}
+
+		uint32_t leftChild = nodeIndex + 1;
+		uint32_t rightChild = nodeIndex + uint32_t(node.rightOffset);
+
+		file << tfm::format("n%d -> { n%d; n%d }", nodeIndex, leftChild, rightChild) << std::endl;;
+
+		stack[stackIndex++] = leftChild;
+		stack[stackIndex++] = rightChild;
+	}
+
+	file << "}" << std::endl;
+}

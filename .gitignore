@@ -1,6 +1,7 @@
 /bin
 /build
 /ipch
+/x64
 *.sdf
 *.opensdf
 *.opendb

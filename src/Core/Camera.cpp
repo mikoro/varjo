@@ -129,6 +129,12 @@ void Camera::update(float timeStep)
 		smoothAngularAcceleration = Vector3(0.0f, 0.0f, 0.0f);
 	}
 
+	if (window.keyWasPressed(GLFW_KEY_R))
+		reset();
+
+	if (window.keyWasPressed(GLFW_KEY_F11))
+		saveState("camera.txt");
+
 	// EULER INTEGRATION //
 
 	cameraIsMoving = false;
@@ -214,19 +220,19 @@ void Camera::saveState(const std::string& fileName) const
 	file.close();
 }
 
-CameraData Camera::getCameraData() const
+Cuda::Camera Camera::getCudaCamera() const
 {
-	CameraData data;
+	Cuda::Camera camera;
 
-	data.position = make_float3(position.x, position.y, position.z);
-	data.right = make_float3(right.x, right.y, right.z);
-	data.up = make_float3(up.x, up.y, up.z);
-	data.forward = make_float3(forward.x, forward.y, forward.z);
-	data.filmCenter = make_float3(filmCenter.x, filmCenter.y, filmCenter.z);
-	data.halfFilmWidth = filmWidth / 2.0f;
-	data.halfFilmHeight = filmHeight / 2.0f;
+	camera.position = make_float3(position.x, position.y, position.z);
+	camera.right = make_float3(right.x, right.y, right.z);
+	camera.up = make_float3(up.x, up.y, up.z);
+	camera.forward = make_float3(forward.x, forward.y, forward.z);
+	camera.filmCenter = make_float3(filmCenter.x, filmCenter.y, filmCenter.z);
+	camera.halfFilmWidth = filmWidth / 2.0f;
+	camera.halfFilmHeight = filmHeight / 2.0f;
 
-	return data;
+	return camera;
 }
 
 Vector3 Camera::getRight() const

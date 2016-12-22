@@ -118,6 +118,7 @@
     <ClCompile Include="src\Core\Camera.cpp" />
     <ClCompile Include="src\Core\Sampler.cpp" />
     <ClCompile Include="src\Core\Scene.cpp" />
+    <ClCompile Include="src\Core\Sphere.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\External\gl3w.cpp" />
     <ClCompile Include="src\External\nanovg.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="src\Core\Camera.h" />
     <ClInclude Include="src\Core\Sampler.h" />
     <ClInclude Include="src\Core\Scene.h" />
+    <ClInclude Include="src\Core\Sphere.h" />
     <ClInclude Include="src\Cuda\CudaUtils.h" />
     <ClInclude Include="src\Cuda\Renderer.h" />
     <ClInclude Include="src\Cuda\Structs.h" />

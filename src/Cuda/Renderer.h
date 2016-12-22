@@ -5,12 +5,11 @@
 
 #include <cuda_runtime.h>
 
+#include "Cuda/Structs.h"
+
 namespace Varjo
 {
 	class Scene;
-	struct Sphere;
-	struct BVHNode;
-	struct CameraData;
 
 	class Renderer
 	{
@@ -24,10 +23,10 @@ namespace Varjo
 
 	private:
 
-		Sphere* primitives = nullptr;
-		BVHNode* nodes = nullptr;
-		CameraData* camera = nullptr;
-
+		Cuda::Camera* camera = nullptr;
+		Cuda::Sphere* primitives = nullptr;
+		Cuda::BVHNode* nodes = nullptr;
+		
 		dim3 clearKernelBlockDim;
 		dim3 clearKernelGridDim;
 
