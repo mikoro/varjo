@@ -3,18 +3,19 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "Core/AABB.h"
-#include "Math/Vector3.h"
 
 namespace Varjo
 {
-	class Sphere
+	struct Triangle
 	{
-	public:
-
 		AABB getAABB() const;
 
-		Vector3 position;
-		float radius;
+		float3 vertices[3];
+		float3 normals[3];
+		//float2 texcoords[3];
+		uint32_t materialIndex = 0;
 	};
 }

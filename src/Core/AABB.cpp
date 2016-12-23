@@ -3,17 +3,14 @@
 
 #include <cfloat>
 
+#include <cuda/helper_math.h>
+
 #include "Core/AABB.h"
+#include "Common.h"
 
 using namespace Varjo;
 
-AABB::AABB()
-{
-	min.x = min.y = min.z = FLT_MAX;
-	max.x = max.y = max.z = -FLT_MAX;
-}
-
-AABB AABB::createFromMinMax(const Vector3& min_, const Vector3& max_)
+AABB AABB::createFromMinMax(const float3& min_, const float3& max_)
 {
 	AABB aabb;
 
@@ -23,7 +20,7 @@ AABB AABB::createFromMinMax(const Vector3& min_, const Vector3& max_)
 	return aabb;
 }
 
-AABB AABB::createFromCenterExtent(const Vector3& center, const Vector3& extent)
+AABB AABB::createFromCenterExtent(const float3& center, const float3& extent)
 {
 	AABB aabb;
 
@@ -33,15 +30,15 @@ AABB AABB::createFromCenterExtent(const Vector3& center, const Vector3& extent)
 	return aabb;
 }
 
-AABB AABB::createFromVertices(const Vector3& v0, const Vector3& v1, const Vector3& v2)
+AABB AABB::createFromVertices(const float3& v0, const float3& v1, const float3& v2)
 {
-	Vector3 min_;
+	float3 min_;
 
 	min_.x = MIN(v0.x, MIN(v1.x, v2.x));
 	min_.y = MIN(v0.y, MIN(v1.y, v2.y));
 	min_.z = MIN(v0.z, MIN(v1.z, v2.z));
 
-	Vector3 max_;
+	float3 max_;
 
 	max_.x = MAX(v0.x, MAX(v1.x, v2.x));
 	max_.y = MAX(v0.y, MAX(v1.y, v2.y));
@@ -71,18 +68,18 @@ void AABB::expand(const AABB& other)
 		max.z = other.max.z;
 }
 
-Vector3 AABB::getCenter() const
+float3 AABB::getCenter() const
 {
 	return (min + max) * 0.5;
 }
 
-Vector3 AABB::getExtent() const
+float3 AABB::getExtent() const
 {
 	return max - min;
 }
 
 float AABB::getSurfaceArea() const
 {
-	Vector3 extent = getExtent();
+	float3 extent = getExtent();
 	return 2.0f * (extent.x * extent.y + extent.z * extent.y + extent.x * extent.z);
 }

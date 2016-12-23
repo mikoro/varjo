@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include "Math/Vector3.h"
+#include <cfloat>
+
+#include <cuda_runtime.h>
 
 namespace Varjo
 {
@@ -11,19 +13,17 @@ namespace Varjo
 	{
 	public:
 
-		AABB();
-
-		static AABB createFromMinMax(const Vector3& min, const Vector3& max);
-		static AABB createFromCenterExtent(const Vector3& center, const Vector3& extent);
-		static AABB createFromVertices(const Vector3& v0, const Vector3& v1, const Vector3& v2);
+		static AABB createFromMinMax(const float3& min, const float3& max);
+		static AABB createFromCenterExtent(const float3& center, const float3& extent);
+		static AABB createFromVertices(const float3& v0, const float3& v1, const float3& v2);
 
 		void expand(const AABB& other);
 
-		Vector3 getCenter() const;
-		Vector3 getExtent() const;
+		float3 getCenter() const;
+		float3 getExtent() const;
 		float getSurfaceArea() const;
 
-		Vector3 min;
-		Vector3 max;
+		float3 min = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+		float3 max = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	};
 }

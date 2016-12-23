@@ -5,7 +5,10 @@
 
 #include <cuda_runtime.h>
 
-#include "Cuda/Structs.h"
+#include "Core/Camera.h"
+#include "Core/BVH.h"
+#include "Core/Triangle.h"
+#include "Core/Material.h"
 
 namespace Varjo
 {
@@ -23,13 +26,11 @@ namespace Varjo
 
 	private:
 
-		Cuda::Camera* camera = nullptr;
-		Cuda::Sphere* primitives = nullptr;
-		Cuda::BVHNode* nodes = nullptr;
+		CameraData* camera = nullptr;
+		BVHNode* nodes = nullptr;
+		Triangle* triangles = nullptr;
+		Material* materials = nullptr;
 		
-		dim3 clearKernelBlockDim;
-		dim3 clearKernelGridDim;
-
 		dim3 traceKernelBlockDim;
 		dim3 traceKernelGridDim;
 	};

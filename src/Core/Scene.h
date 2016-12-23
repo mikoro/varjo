@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "Core/Camera.h"
-#include "Core/Sphere.h"
 #include "Core/BVH.h"
+#include "Core/Triangle.h"
+#include "Core/Material.h"
+#include "Utils/ModelLoader.h"
 
 namespace Varjo
 {
@@ -20,7 +22,9 @@ namespace Varjo
 		void initialize();
 
 		Camera camera;
-		std::vector<Sphere> primitives;
 		std::vector<BVHNode> nodes;
+		std::vector<Triangle> triangles;
+		std::vector<Material> materials;
+		std::string modelFileName;
 	};
 }

@@ -118,7 +118,7 @@
     <ClCompile Include="src\Core\Camera.cpp" />
     <ClCompile Include="src\Core\Sampler.cpp" />
     <ClCompile Include="src\Core\Scene.cpp" />
-    <ClCompile Include="src\Core\Sphere.cpp" />
+    <ClCompile Include="src\Core\Triangle.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\External\gl3w.cpp" />
     <ClCompile Include="src\External\nanovg.cpp" />
@@ -132,6 +132,7 @@
     <ClCompile Include="src\Math\Vector4.cpp" />
     <ClCompile Include="src\Utils\App.cpp" />
     <ClCompile Include="src\Utils\InfoPanel.cpp" />
+    <ClCompile Include="src\Utils\ModelLoader.cpp" />
     <ClCompile Include="src\Utils\Window.cpp" />
     <ClCompile Include="src\Utils\Film.cpp" />
     <ClCompile Include="src\Utils\FpsCounter.cpp" />
@@ -147,12 +148,15 @@
     <ClInclude Include="src\Core\AABB.h" />
     <ClInclude Include="src\Core\BVH.h" />
     <ClInclude Include="src\Core\Camera.h" />
+    <ClInclude Include="src\Core\Intersection.h" />
+    <ClInclude Include="src\Core\Material.h" />
+    <ClInclude Include="src\Core\Path.h" />
+    <ClInclude Include="src\Core\Ray.h" />
     <ClInclude Include="src\Core\Sampler.h" />
     <ClInclude Include="src\Core\Scene.h" />
-    <ClInclude Include="src\Core\Sphere.h" />
+    <ClInclude Include="src\Core\Triangle.h" />
     <ClInclude Include="src\Cuda\CudaUtils.h" />
     <ClInclude Include="src\Cuda\Renderer.h" />
-    <ClInclude Include="src\Cuda\Structs.h" />
     <ClInclude Include="src\Math\EulerAngle.h" />
     <ClInclude Include="src\Math\MathUtils.h" />
     <ClInclude Include="src\Math\Matrix4x4.h" />
@@ -162,6 +166,7 @@
     <ClInclude Include="src\Math\Vector4.h" />
     <ClInclude Include="src\Utils\App.h" />
     <ClInclude Include="src\Utils\InfoPanel.h" />
+    <ClInclude Include="src\Utils\ModelLoader.h" />
     <ClInclude Include="src\Utils\Window.h" />
     <ClInclude Include="src\Utils\Film.h" />
     <ClInclude Include="src\Utils\FpsCounter.h" />

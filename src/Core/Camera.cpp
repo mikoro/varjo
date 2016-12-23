@@ -220,9 +220,9 @@ void Camera::saveState(const std::string& fileName) const
 	file.close();
 }
 
-Cuda::Camera Camera::getCudaCamera() const
+CameraData Camera::getCameraData() const
 {
-	Cuda::Camera camera;
+	CameraData camera;
 
 	camera.position = make_float3(position.x, position.y, position.z);
 	camera.right = make_float3(right.x, right.y, right.z);

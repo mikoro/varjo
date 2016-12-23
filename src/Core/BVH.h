@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "Core/AABB.h"
-#include "Core/Sphere.h"
+#include "Core/Triangle.h"
 
 namespace Varjo
 {
@@ -15,15 +15,15 @@ namespace Varjo
 	{
 		AABB aabb;
 		int32_t rightOffset;
-		uint32_t primitiveOffset;
-		uint32_t primitiveCount;
+		uint32_t triangleOffset;
+		uint32_t triangleCount;
 	};
 
 	class BVH
 	{
 	public:
 
-		static void build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes);
+		static void build(std::vector<Triangle>& triangles, std::vector<BVHNode>& nodes);
 		static void exportDot(std::vector<BVHNode>& nodes, const std::string& fileName);
 	};
 }

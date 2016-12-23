@@ -21,11 +21,11 @@ using namespace Varjo;
 
 namespace
 {
-	struct BVHBuildPrimitive
+	struct BVHBuildTriangle
 	{
-		Sphere* primitive;
+		Triangle* triangle;
 		AABB aabb;
-		Vector3 center;
+		float3 center;
 	};
 
 	struct BVHSplitCache
@@ -50,7 +50,7 @@ namespace
 		AABB rightAABB;
 	};
 
-	BVHSplitOutput calculateSplit(std::vector<BVHBuildPrimitive>& buildPrimitives, std::vector<BVHSplitCache>& splitCache, uint32_t start, uint32_t end)
+	BVHSplitOutput calculateSplit(std::vector<BVHBuildTriangle>& buildTriangles, std::vector<BVHSplitCache>& splitCache, uint32_t start, uint32_t end)
 	{
 		assert(end > start);
 
@@ -60,7 +60,7 @@ namespace
 
 		for (uint32_t axis = 0; axis <= 2; ++axis)
 		{
-			PARALLEL_SORT(buildPrimitives.begin() + start, buildPrimitives.begin() + end, [axis](const BVHBuildPrimitive& t1, const BVHBuildPrimitive& t2)
+			PARALLEL_SORT(buildTriangles.begin() + start, buildTriangles.begin() + end, [axis](const BVHBuildTriangle& t1, const BVHBuildTriangle& t2)
 			{
 				return (&t1.center.x)[axis] < (&t2.center.x)[axis];
 			});
@@ -70,7 +70,7 @@ namespace
 
 			for (int32_t i = end - 1; i >= int32_t(start); --i)
 			{
-				rightAABB.expand(buildPrimitives[i].aabb);
+				rightAABB.expand(buildTriangles[i].aabb);
 				rightCount++;
 
 				splitCache[i].aabb = rightAABB;
@@ -82,7 +82,7 @@ namespace
 
 			for (uint32_t i = start; i < end; ++i)
 			{
-				leftAABB.expand(buildPrimitives[i].aabb);
+				leftAABB.expand(buildTriangles[i].aabb);
 				leftCount++;
 
 				float cost = leftAABB.getSurfaceArea() * float(leftCount);
@@ -110,7 +110,7 @@ namespace
 
 		if (output.axis != 2)
 		{
-			PARALLEL_SORT(buildPrimitives.begin() + start, buildPrimitives.begin() + end, [output](const BVHBuildPrimitive& t1, const BVHBuildPrimitive& t2)
+			PARALLEL_SORT(buildTriangles.begin() + start, buildTriangles.begin() + end, [output](const BVHBuildTriangle& t1, const BVHBuildTriangle& t2)
 			{
 				return (&t1.center.x)[output.axis] < (&t2.center.x)[output.axis];
 			});
@@ -122,38 +122,38 @@ namespace
 
 }
 
-void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
+void BVH::build(std::vector<Triangle>& triangles, std::vector<BVHNode>& nodes)
 {
 	Log& log = App::getLog();
 
 	Timer timer;
-	uint32_t primitiveCount = uint32_t(primitives.size());
+	uint32_t triangleCount = uint32_t(triangles.size());
 
-	if (primitiveCount == 0)
+	if (triangleCount == 0)
 	{
-		log.logWarning("Could not build BVH from empty primitive list");
+		log.logWarning("Could not build BVH from empty triangles list");
 		return;
 	}
 
-	log.logInfo("BVH building started (primitives: %d)", primitiveCount);
+	log.logInfo("BVH building started (triangles: %d)", triangleCount);
 
-	std::vector<BVHBuildPrimitive> buildPrimitives(primitiveCount);
-	std::vector<BVHSplitCache> splitCache(primitiveCount);
-	std::vector<uint32_t> leafPrimitiveCounts;
+	std::vector<BVHBuildTriangle> buildTriangles(triangleCount);
+	std::vector<BVHSplitCache> splitCache(triangleCount);
+	std::vector<uint32_t> leafTriangleCounts;
 	BVHSplitOutput splitOutput;
 
-	for (uint32_t i = 0; i < primitiveCount; ++i)
+	for (uint32_t i = 0; i < triangleCount; ++i)
 	{
-		AABB aabb = primitives[i].getAABB();
+		AABB aabb = triangles[i].getAABB();
 
-		buildPrimitives[i].primitive = &primitives[i];
-		buildPrimitives[i].aabb = aabb;
-		buildPrimitives[i].center = aabb.getCenter();
+		buildTriangles[i].triangle = &triangles[i];
+		buildTriangles[i].aabb = aabb;
+		buildTriangles[i].center = aabb.getCenter();
 	}
 
 	nodes.clear();
-	nodes.reserve(primitiveCount);
-	leafPrimitiveCounts.reserve(primitiveCount / 4);
+	nodes.reserve(triangleCount);
+	leafTriangleCounts.reserve(triangleCount / 4);
 
 	BVHBuildEntry stack[128];
 	uint32_t stackIndex = 0;
@@ -161,7 +161,7 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 	// push to stack
 	stack[stackIndex].start = 0;
-	stack[stackIndex].end = primitiveCount;
+	stack[stackIndex].end = triangleCount;
 	stack[stackIndex].parent = -1;
 	stackIndex++;
 
@@ -174,11 +174,11 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 		BVHNode node;
 		node.rightOffset = -3;
-		node.primitiveOffset = uint32_t(buildEntry.start);
-		node.primitiveCount = uint32_t(buildEntry.end - buildEntry.start);
+		node.triangleOffset = uint32_t(buildEntry.start);
+		node.triangleCount = uint32_t(buildEntry.end - buildEntry.start);
 
 		// set as leaf node
-		if (node.primitiveCount <= 4)
+		if (node.triangleCount <= 4)
 			node.rightOffset = 0;
 
 		// update the parent rightOffset when visiting its right child
@@ -193,7 +193,7 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 		// not a leaf node -> split
 		if (node.rightOffset != 0)
 		{
-			splitOutput = calculateSplit(buildPrimitives, splitCache, buildEntry.start, buildEntry.end);
+			splitOutput = calculateSplit(buildTriangles, splitCache, buildEntry.start, buildEntry.end);
 			node.aabb = splitOutput.fullAABB;
 		}
 
@@ -201,7 +201,7 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 
 		if (node.rightOffset == 0)
 		{
-			leafPrimitiveCounts.push_back(node.primitiveCount);
+			leafTriangleCounts.push_back(node.triangleCount);
 			continue;
 		}
 
@@ -218,22 +218,22 @@ void BVH::build(std::vector<Sphere>& primitives, std::vector<BVHNode>& nodes)
 		stackIndex++;
 	}
 
-	std::vector<Sphere> sortedPrimitives(primitiveCount);
+	std::vector<Triangle> sortedTriangles(triangleCount);
 
-	for (uint32_t i = 0; i < primitiveCount; ++i)
-		sortedPrimitives[i] = *buildPrimitives[i].primitive;
+	for (uint32_t i = 0; i < triangleCount; ++i)
+		sortedTriangles[i] = *buildTriangles[i].triangle;
 
-	primitives = sortedPrimitives;
+	triangles = sortedTriangles;
 
-	float mean = float(primitiveCount) / float(leafPrimitiveCounts.size());
+	float mean = float(triangleCount) / float(leafTriangleCounts.size());
 	float std = 0.0f;
 
-	for (uint32_t i = 0; i < leafPrimitiveCounts.size(); ++i)
-		std += std::pow(float(leafPrimitiveCounts[i]) - mean, 2);
+	for (uint32_t i = 0; i < leafTriangleCounts.size(); ++i)
+		std += std::pow(float(leafTriangleCounts[i]) - mean, 2);
 
-	std /= float(leafPrimitiveCounts.size());
+	std /= float(leafTriangleCounts.size());
 
-	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, primitives/leaf: %.2f +- %.2f)", timer.getElapsed().getString(true), nodeCount, leafPrimitiveCounts.size(), mean, std);
+	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, triangles/leaf: %.2f +- %.2f)", timer.getElapsed().getString(true), nodeCount, leafTriangleCounts.size(), mean, std);
 }
 
 void BVH::exportDot(std::vector<BVHNode>& nodes, const std::string& fileName)
@@ -261,8 +261,8 @@ void BVH::exportDot(std::vector<BVHNode>& nodes, const std::string& fileName)
 		{
 			file << tfm::format("n%d -> { ", nodeIndex);
 
-			for (uint32_t i = 0; i < node.primitiveCount; ++i)
-				file << tfm::format("t%d; ", node.primitiveOffset + i);
+			for (uint32_t i = 0; i < node.triangleCount; ++i)
+				file << tfm::format("t%d; ", node.triangleOffset + i);
 
 			file << "}" << std::endl;
 

@@ -100,8 +100,11 @@
     <ClCompile Include="src\Math\Vector4.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Sphere.cpp">
+    <ClCompile Include="src\Core\Triangle.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\ModelLoader.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -178,13 +181,25 @@
     <ClInclude Include="src\Cuda\Renderer.h">
       <Filter>Cuda</Filter>
     </ClInclude>
-    <ClInclude Include="src\Cuda\Structs.h">
-      <Filter>Cuda</Filter>
-    </ClInclude>
     <ClInclude Include="src\Cuda\CudaUtils.h">
       <Filter>Cuda</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Sphere.h">
+    <ClInclude Include="src\Core\Material.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Triangle.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\ModelLoader.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Intersection.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Ray.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Path.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
