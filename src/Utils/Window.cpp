@@ -123,7 +123,7 @@ float Window::getElapsedTime() const
 	return float(glfwGetTime() - startTime);
 }
 
-const Film& Window::getFilm() const
+Film& Window::getFilm()
 {
 	return film;
 }

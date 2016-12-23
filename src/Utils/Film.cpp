@@ -222,7 +222,25 @@ uint32_t Film::getLength() const
 	return length;
 }
 
-cudaGraphicsResource* Film::getTextureResource() const
+cudaSurfaceObject_t Film::getFilmSurfaceObject()
 {
-	return textureResource;
+	CudaUtils::checkError(cudaGraphicsMapResources(1, &textureResource, 0), "Could not map CUDA texture resource");
+
+	cudaArray_t textureArray;
+	CudaUtils::checkError(cudaGraphicsSubResourceGetMappedArray(&textureArray, textureResource, 0, 0), "Could not get CUDA mapped array");
+
+	cudaResourceDesc resourceDesc;
+	memset(&resourceDesc, 0, sizeof(resourceDesc));
+	resourceDesc.resType = cudaResourceTypeArray;
+	resourceDesc.res.array.array = textureArray;
+
+	CudaUtils::checkError(cudaCreateSurfaceObject(&textureSurfaceObject, &resourceDesc), "Could not create CUDA surface object");
+
+	return textureSurfaceObject;
+}
+
+void Film::releaseFilmSurfaceObject()
+{
+	CudaUtils::checkError(cudaDestroySurfaceObject(textureSurfaceObject), "Could not destroy CUDA surface object");
+	CudaUtils::checkError(cudaGraphicsUnmapResources(1, &textureResource, 0), "Could not unmap CUDA texture resource");
 }

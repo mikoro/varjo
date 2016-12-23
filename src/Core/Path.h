@@ -4,11 +4,17 @@
 #pragma once
 
 #include "Core/Random.h"
+#include "Core/Sample.h"
 
 namespace Varjo
 {
 	struct Path
 	{
-		RandomState random;
+		Random random;
+		Sample filmSample;
+		Sample cameraSample;
+		float2 filmSamplePosition;
+		float3 result;
+		float3 throughput;
 	};
 }

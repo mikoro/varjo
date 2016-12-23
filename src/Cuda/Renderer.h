@@ -11,6 +11,7 @@
 #include "Core/Triangle.h"
 #include "Core/Material.h"
 #include "Core/Path.h"
+#include "Core/Pixel.h"
 
 namespace Varjo
 {
@@ -31,8 +32,10 @@ namespace Varjo
 		CameraData* camera = nullptr;
 		BVHNode* nodes = nullptr;
 		Triangle* triangles = nullptr;
+		Triangle* emitters = nullptr;
 		Material* materials = nullptr;
 		Path* paths = nullptr;
+		Pixel* pixels = nullptr;
 		
 		dim3 traceKernelBlockSize;
 		dim3 traceKernelGridSize;

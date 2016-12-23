@@ -116,7 +116,6 @@
     <ClCompile Include="src\Core\AABB.cpp" />
     <ClCompile Include="src\Core\BVH.cpp" />
     <ClCompile Include="src\Core\Camera.cpp" />
-    <ClCompile Include="src\Core\Sampler.cpp" />
     <ClCompile Include="src\Core\Scene.cpp" />
     <ClCompile Include="src\Core\Triangle.cpp" />
     <ClCompile Include="src\Main.cpp" />
@@ -151,9 +150,10 @@
     <ClInclude Include="src\Core\Intersection.h" />
     <ClInclude Include="src\Core\Material.h" />
     <ClInclude Include="src\Core\Path.h" />
+    <ClInclude Include="src\Core\Pixel.h" />
     <ClInclude Include="src\Core\Random.h" />
     <ClInclude Include="src\Core\Ray.h" />
-    <ClInclude Include="src\Core\Sampler.h" />
+    <ClInclude Include="src\Core\Sample.h" />
     <ClInclude Include="src\Core\Scene.h" />
     <ClInclude Include="src\Core\Triangle.h" />
     <ClInclude Include="src\Cuda\CudaUtils.h" />

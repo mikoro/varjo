@@ -18,7 +18,7 @@ using namespace Varjo;
 namespace
 {
 	// http://www.pcg-random.org/
-	__device__ uint32_t randomInt(RandomState& random)
+	__device__ uint32_t randomInt(Random& random)
 	{
 		uint64_t oldstate = random.state;
 		random.state = oldstate * 6364136223846793005ULL + random.inc;
@@ -27,19 +27,63 @@ namespace
 		return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 	}
 
-	__device__ float randomFloat(RandomState& random)
+	__device__ float randomFloat(Random& random)
 	{
 		//return float(ldexp(randomInt(random), -32)); // http://mumble.net/~campbell/tmp/random_real.c
 		return float(randomInt(random)) / float(0xFFFFFFFF);
 	}
 
-	__device__ void initRandom(RandomState& random, uint64_t initstate, uint64_t initseq)
+	__device__ void initRandom(Random& random, uint64_t initstate, uint64_t initseq)
 	{
 		random.state = 0U;
 		random.inc = (initseq << 1u) | 1u;
 		randomInt(random);
 		random.state += initstate;
 		randomInt(random);
+	}
+
+	__device__ uint32_t permute(uint32_t i, uint32_t l, uint32_t p)
+	{
+		uint32_t w = l - 1;
+
+		w |= w >> 1; w |= w >> 2;
+		w |= w >> 4; w |= w >> 8;
+		w |= w >> 16;
+
+		do
+		{
+			i ^= p; i *= 0xe170893d;
+			i ^= p >> 16; i ^= (i & w) >> 4;
+			i ^= p >> 8; i *= 0x0929eb3f;
+			i ^= p >> 23; i ^= (i & w) >> 1;
+			i *= 1 | p >> 27; i *= 0x6935fa69;
+			i ^= (i & w) >> 11; i *= 0x74dcb303;
+			i ^= (i & w) >> 2; i *= 0x9e501cc3;
+			i ^= (i & w) >> 2; i *= 0xc860a3df;
+			i &= w; i ^= i >> 5;
+		} while (i >= l);
+
+		return (i + p) % l;
+	}
+
+	// http://graphics.pixar.com/library/MultiJitteredSampling/
+	__device__ float2 getSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p)
+	{
+		// if s is not permutated, the samples will come out in scanline order
+		s = permute(s, m * n, p * 0xa511e9b3);
+
+		uint32_t x = s % m;
+		uint32_t y = s / m;
+
+		uint32_t sx = permute(x, m, p * 0xa511e9b3);
+		uint32_t sy = permute(y, n, p * 0x63d83595);
+
+		float2 r;
+
+		r.x = (float(x) + float(sy) / float(n)) / float(m);
+		r.y = (float(y) + float(sx) / float(m)) / float(n);
+
+		return r;
 	}
 
 	__device__ void initRay(Ray& ray)
@@ -127,11 +171,10 @@ namespace
 
 	__device__ void intersectBvh(const BVHNode* __restrict nodes, const Triangle* __restrict triangles, const Ray& ray, Intersection& intersection)
 	{
+		BVHNode node;
 		uint32_t stack[64];
 		uint32_t stackIndex = 1;
 		stack[0] = 0;
-
-		BVHNode node;
 
 		while (stackIndex > 0)
 		{
@@ -163,6 +206,11 @@ namespace
 			return;
 
 		initRandom(paths[id].random, seed, uint64_t(id));
+
+		paths[id].filmSample.index = 0;
+		paths[id].filmSample.permutation = randomInt(paths[id].random);
+		paths[id].cameraSample.index = 0;
+		paths[id].cameraSample.permutation = randomInt(paths[id].random);
 	}
 
 	__global__ void traceKernel(const CameraData* __restrict camera,
@@ -202,7 +250,7 @@ void Renderer::initialize(const Scene& scene)
 	memcpy(triangles, scene.triangles.data(), sizeof(Triangle) * scene.triangles.size());
 	memcpy(materials, scene.materials.data(), sizeof(Material) * scene.materials.size());
 
-	uint64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	uint64_t time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
 	int blockSize, gridSize;
 	CudaUtils::calculateDimensions(static_cast<void*>(initPathsKernel), "initPaths", pathCount, blockSize, gridSize);
@@ -233,25 +281,13 @@ void Renderer::filmResized(uint32_t width, uint32_t height)
 
 void Renderer::render()
 {
-	const Film& film = App::getWindow().getFilm();
-	cudaGraphicsResource* filmTextureResource = film.getTextureResource();
-	CudaUtils::checkError(cudaGraphicsMapResources(1, &filmTextureResource, 0), "Could not map CUDA texture resource");
-
-	cudaArray_t filmTextureArray;
-	CudaUtils::checkError(cudaGraphicsSubResourceGetMappedArray(&filmTextureArray, filmTextureResource, 0, 0), "Could not get CUDA mapped array");
-
-	cudaResourceDesc filmResourceDesc;
-	memset(&filmResourceDesc, 0, sizeof(filmResourceDesc));
-	filmResourceDesc.resType = cudaResourceTypeArray;
-	filmResourceDesc.res.array.array = filmTextureArray;
-
-	cudaSurfaceObject_t filmSurfaceObject;
-	CudaUtils::checkError(cudaCreateSurfaceObject(&filmSurfaceObject, &filmResourceDesc), "Could not create CUDA surface object");
-
+	Film& film = App::getWindow().getFilm();
+	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
+	
 	traceKernel<<<traceKernelGridSize, traceKernelBlockSize>>>(camera, nodes, triangles, materials, filmSurfaceObject, film.getWidth(), film.getHeight());
 
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-	CudaUtils::checkError(cudaDestroySurfaceObject(filmSurfaceObject), "Could not destroy CUDA surface object");
-	CudaUtils::checkError(cudaGraphicsUnmapResources(1, &filmTextureResource, 0), "Could not unmap CUDA texture resource");
+	
+	film.releaseFilmSurfaceObject();
 }

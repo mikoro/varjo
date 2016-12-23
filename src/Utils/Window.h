@@ -40,7 +40,7 @@ namespace Varjo
 		uint32_t getWindowHeight() const;
 		const MouseInfo& getMouseInfo() const;
 		float getElapsedTime() const;
-		const Film& getFilm() const;
+		Film& getFilm();
 		const FpsCounter& getFpsCounter() const;
 		
 		bool keyIsDown(int32_t key);

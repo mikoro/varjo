@@ -31,7 +31,8 @@ namespace Varjo
 		uint32_t getHeight() const;
 		uint32_t getLength() const;
 
-		cudaGraphicsResource* getTextureResource() const;
+		cudaSurfaceObject_t getFilmSurfaceObject();
+		void releaseFilmSurfaceObject();
 
 	private:
 
@@ -50,5 +51,6 @@ namespace Varjo
 		GLuint texelHeightUniformId = 0;
 
 		cudaGraphicsResource* textureResource = nullptr;
+		cudaSurfaceObject_t textureSurfaceObject;
 	};
 }

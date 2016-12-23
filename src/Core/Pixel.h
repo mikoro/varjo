@@ -3,14 +3,13 @@
 
 #pragma once
 
-#include <cstdint>
+#include <cuda_runtime.h>
 
 namespace Varjo
 {
-	// http://www.pcg-random.org/
-	struct Random
+	struct Pixel
 	{
-		uint64_t state = 0x853c49e6748fea9bULL;
-		uint64_t inc = 0xda3e39cb94b95bdbULL;
+		float3 value;
+		float weight;
 	};
 }
