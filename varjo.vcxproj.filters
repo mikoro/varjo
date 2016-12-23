@@ -202,6 +202,9 @@
     <ClInclude Include="src\Core\Path.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Random.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Utils\Log.inl">

@@ -3,11 +3,12 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
+#include "Core/Random.h"
 
 namespace Varjo
 {
 	struct Path
 	{
+		RandomState random;
 	};
 }

@@ -11,11 +11,37 @@
 #include "Utils/App.h"
 #include "Core/Ray.h"
 #include "Core/Intersection.h"
+#include "Core/Random.h"
 
 using namespace Varjo;
 
 namespace
 {
+	// http://www.pcg-random.org/
+	__device__ uint32_t randomInt(RandomState& random)
+	{
+		uint64_t oldstate = random.state;
+		random.state = oldstate * 6364136223846793005ULL + random.inc;
+		uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+		uint32_t rot = oldstate >> 59u;
+		return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+	}
+
+	__device__ float randomFloat(RandomState& random)
+	{
+		//return float(ldexp(randomInt(random), -32)); // http://mumble.net/~campbell/tmp/random_real.c
+		return float(randomInt(random)) / float(0xFFFFFFFF);
+	}
+
+	__device__ void initRandom(RandomState& random, uint64_t initstate, uint64_t initseq)
+	{
+		random.state = 0U;
+		random.inc = (initseq << 1u) | 1u;
+		randomInt(random);
+		random.state += initstate;
+		randomInt(random);
+	}
+
 	__device__ void initRay(Ray& ray)
 	{
 		ray.invD = make_float3(1.0, 1.0f, 1.0f) / ray.direction;
@@ -37,6 +63,7 @@ namespace
 		return ray;
 	}
 
+	// http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 	__device__ void intersectTriangle(const Triangle& triangle, const Ray& ray, Intersection& intersection)
 	{
 		bool hit = true;
@@ -82,6 +109,7 @@ namespace
 		}
 	}
 
+	// https://mediatech.aalto.fi/~timo/publications/aila2012hpg_techrep.pdf
 	__device__ bool intersectAabb(const AABB& aabb, const Ray& ray)
 	{
 		float x0 = fmaf(aabb.min.x, ray.invD.x, -ray.OoD.x);
@@ -93,7 +121,7 @@ namespace
 
 		float tminbox = fmaxf(fmaxf(ray.minDistance, fminf(x0, x1)), fmaxf(fminf(y0, y1), fminf(z0, z1)));
 		float tmaxbox = fminf(fminf(ray.maxDistance, fmaxf(x0, x1)), fminf(fmaxf(y0, y1), fmaxf(z0, z1)));
-		
+
 		return (tminbox <= tmaxbox);
 	}
 
@@ -127,11 +155,21 @@ namespace
 		}
 	}
 
+	__global__ void initPathsKernel(Path* paths, uint64_t seed, uint32_t pathCount)
+	{
+		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= pathCount)
+			return;
+
+		initRandom(paths[id].random, seed, uint64_t(id));
+	}
+
 	__global__ void traceKernel(const CameraData* __restrict camera,
-		const BVHNode* __restrict nodes,
-		const Triangle* __restrict triangles,
-		const Material* __restrict materials,
-		cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
+	                            const BVHNode* __restrict nodes,
+	                            const Triangle* __restrict triangles,
+	                            const Material* __restrict materials,
+	                            cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
 	{
 		uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
 		uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -155,13 +193,22 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::checkError(cudaMallocManaged(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&triangles, sizeof(Triangle) * scene.triangles.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&materials, sizeof(Material) * scene.materials.size()), "Could not allocate CUDA device memory");
-	
+	CudaUtils::checkError(cudaMallocManaged(&paths, sizeof(Path) * pathCount), "Could not allocate CUDA device memory");
+
 	CameraData cameraData = scene.camera.getCameraData();
 
 	memcpy(camera, &cameraData, sizeof(CameraData));
 	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
 	memcpy(triangles, scene.triangles.data(), sizeof(Triangle) * scene.triangles.size());
 	memcpy(materials, scene.materials.data(), sizeof(Material) * scene.materials.size());
+
+	uint64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+	int blockSize, gridSize;
+	CudaUtils::calculateDimensions(static_cast<void*>(initPathsKernel), "initPaths", pathCount, blockSize, gridSize);
+	initPathsKernel<<<gridSize, blockSize>>>(paths, time, pathCount);
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
 }
 
 void Renderer::shutdown()
@@ -170,6 +217,7 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(nodes), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(triangles), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(materials), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
 }
 
 void Renderer::update(const Scene& scene)
@@ -180,7 +228,7 @@ void Renderer::update(const Scene& scene)
 
 void Renderer::filmResized(uint32_t width, uint32_t height)
 {
-	CudaUtils::calculateDimensions(static_cast<void*>(traceKernel), "trace", width, height, traceKernelBlockDim, traceKernelGridDim);
+	CudaUtils::calculateDimensions2D(static_cast<void*>(traceKernel), "trace", width, height, traceKernelBlockSize, traceKernelGridSize);
 }
 
 void Renderer::render()
@@ -200,11 +248,10 @@ void Renderer::render()
 	cudaSurfaceObject_t filmSurfaceObject;
 	CudaUtils::checkError(cudaCreateSurfaceObject(&filmSurfaceObject, &filmResourceDesc), "Could not create CUDA surface object");
 
-	traceKernel<<<traceKernelGridDim, traceKernelBlockDim>>>(camera, nodes, triangles, materials, filmSurfaceObject, film.getWidth(), film.getHeight());
-	
+	traceKernel<<<traceKernelGridSize, traceKernelBlockSize>>>(camera, nodes, triangles, materials, filmSurfaceObject, film.getWidth(), film.getHeight());
+
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-
 	CudaUtils::checkError(cudaDestroySurfaceObject(filmSurfaceObject), "Could not destroy CUDA surface object");
 	CudaUtils::checkError(cudaGraphicsUnmapResources(1, &filmTextureResource, 0), "Could not unmap CUDA texture resource");
 }

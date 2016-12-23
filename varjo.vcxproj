@@ -151,6 +151,7 @@
     <ClInclude Include="src\Core\Intersection.h" />
     <ClInclude Include="src\Core\Material.h" />
     <ClInclude Include="src\Core\Path.h" />
+    <ClInclude Include="src\Core\Random.h" />
     <ClInclude Include="src\Core\Ray.h" />
     <ClInclude Include="src\Core\Sampler.h" />
     <ClInclude Include="src\Core\Scene.h" />

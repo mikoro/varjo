@@ -2,6 +2,7 @@
 // License: MIT, see the LICENSE file.
 
 #include <cuda_runtime_api.h>
+#include <device_launch_parameters.h>
 
 #include "tinyformat/tinyformat.h"
 
@@ -44,23 +45,32 @@ void CudaUtils::initCuda()
 	log.logInfo("CUDA Compute capability: %d.%d | Total memory: %s", deviceProp.major, deviceProp.minor, StringUtils::humanizeNumber(double(deviceProp.totalGlobalMem), true));
 }
 
-void CudaUtils::calculateDimensions(const void* kernel, const char* name, uint32_t width, uint32_t height, dim3& blockDim, dim3& gridDim)
+void CudaUtils::calculateDimensions(const void* kernel, const char* name, uint32_t length, int& blockSize, int& gridSize)
 {
-	int blockSize;
 	int minGridSize;
 
-	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, width * height);
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, length);
 
-	//assert(blockSize % 32 == 0);
+	gridSize = (length + blockSize - 1) / blockSize;
 
-	blockDim.x = 32;
-	blockDim.y = blockSize / 32;
+	App::getLog().logInfo("Kernel (%s) block size: %d | grid size: %d", name, blockSize, gridSize);
+}
 
-	if (blockDim.y == 0)
-		blockDim.y = 1;
+void CudaUtils::calculateDimensions2D(const void* kernel, const char* name, uint32_t width, uint32_t height, dim3& blockSize, dim3& gridSize)
+{
+	int tempBlockSize;
+	int minGridSize;
 
-	gridDim.x = (width + blockDim.x - 1) / blockDim.x;
-	gridDim.y = (height + blockDim.y - 1) / blockDim.y;
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &tempBlockSize, kernel, 0, width * height);
 
-	App::getLog().logInfo("Kernel (%s) block size: %d (%dx%d) | grid size: %d (%dx%d)", name, blockSize, blockDim.x, blockDim.y, gridDim.x * gridDim.y, gridDim.x, gridDim.y);
+	blockSize.x = 32;
+	blockSize.y = tempBlockSize / 32;
+
+	if (blockSize.y == 0)
+		blockSize.y = 1;
+
+	gridSize.x = (width + blockSize.x - 1) / blockSize.x;
+	gridSize.y = (height + blockSize.y - 1) / blockSize.y;
+
+	App::getLog().logInfo("Kernel (%s) block size: %d (%dx%d) | grid size: %d (%dx%d)", name, tempBlockSize, blockSize.x, blockSize.y, gridSize.x * gridSize.y, gridSize.x, gridSize.y);
 }
