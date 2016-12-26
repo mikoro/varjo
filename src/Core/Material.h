@@ -9,7 +9,8 @@ namespace Varjo
 {
 	struct Material
 	{
-		float3 baseColor;
+		float3 baseColor = make_float3(0.0f, 0.0f, 0.0f);
+		float3 emittance = make_float3(0.0f, 0.0f, 0.0f);
 		float subsurface = 0.0f;
 		float metallic = 0.0f;
 		float specular = 0.0f;

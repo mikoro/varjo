@@ -11,7 +11,6 @@
 #include "Utils/App.h"
 #include "Core/Ray.h"
 #include "Core/Intersection.h"
-#include "Core/Random.h"
 
 using namespace Varjo;
 
@@ -25,6 +24,19 @@ namespace
 		uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
 		uint32_t rot = oldstate >> 59u;
 		return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+	}
+
+	__device__ uint32_t randomInt(Random& random, uint32_t max)
+	{
+		uint32_t threshold = -max % max;
+
+		for (;;)
+		{
+			uint32_t r = randomInt(random);
+
+			if (r >= threshold)
+				return r % max; // 0 <= r < max
+		}
 	}
 
 	__device__ float randomFloat(Random& random)
@@ -46,22 +58,34 @@ namespace
 	{
 		uint32_t w = l - 1;
 
-		w |= w >> 1; w |= w >> 2;
-		w |= w >> 4; w |= w >> 8;
+		w |= w >> 1;
+		w |= w >> 2;
+		w |= w >> 4;
+		w |= w >> 8;
 		w |= w >> 16;
 
 		do
 		{
-			i ^= p; i *= 0xe170893d;
-			i ^= p >> 16; i ^= (i & w) >> 4;
-			i ^= p >> 8; i *= 0x0929eb3f;
-			i ^= p >> 23; i ^= (i & w) >> 1;
-			i *= 1 | p >> 27; i *= 0x6935fa69;
-			i ^= (i & w) >> 11; i *= 0x74dcb303;
-			i ^= (i & w) >> 2; i *= 0x9e501cc3;
-			i ^= (i & w) >> 2; i *= 0xc860a3df;
-			i &= w; i ^= i >> 5;
-		} while (i >= l);
+			i ^= p;
+			i *= 0xe170893d;
+			i ^= p >> 16;
+			i ^= (i & w) >> 4;
+			i ^= p >> 8;
+			i *= 0x0929eb3f;
+			i ^= p >> 23;
+			i ^= (i & w) >> 1;
+			i *= 1 | p >> 27;
+			i *= 0x6935fa69;
+			i ^= (i & w) >> 11;
+			i *= 0x74dcb303;
+			i ^= (i & w) >> 2;
+			i *= 0x9e501cc3;
+			i ^= (i & w) >> 2;
+			i *= 0xc860a3df;
+			i &= w;
+			i ^= i >> 5;
+		}
+		while (i >= l);
 
 		return (i + p) % l;
 	}
@@ -92,25 +116,25 @@ namespace
 		ray.OoD = ray.origin / ray.direction;
 	}
 
-	__device__ Ray getRay(float2 pointOnFilm, const CameraData& camera)
+	__device__ Ray getRay(float2 filmPoint, const CameraData& camera)
 	{
-		float dx = pointOnFilm.x - camera.halfFilmWidth;
-		float dy = pointOnFilm.y - camera.halfFilmHeight;
+		float dx = filmPoint.x - camera.halfFilmWidth;
+		float dy = filmPoint.y - camera.halfFilmHeight;
 
-		float3 positionOnFilm = camera.filmCenter + (dx * camera.right) + (dy * camera.up);
+		float3 position = camera.filmCenter + (dx * camera.right) + (dy * camera.up);
 
 		Ray ray;
 		ray.origin = camera.position;
-		ray.direction = normalize(positionOnFilm - camera.position);
+		ray.direction = normalize(position - camera.position);
 		initRay(ray);
 
 		return ray;
 	}
 
 	// http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
-	__device__ void intersectTriangle(const Triangle& triangle, const Ray& ray, Intersection& intersection)
+	__device__ void intersectTriangle(const Triangle* __restrict triangles, uint32_t triangleIndex, const Ray& ray, Intersection& intersection)
 	{
-		bool hit = true;
+		const Triangle triangle = triangles[triangleIndex];
 
 		float3 v0v1 = triangle.vertices[1] - triangle.vertices[0];
 		float3 v0v2 = triangle.vertices[2] - triangle.vertices[0];
@@ -119,7 +143,7 @@ namespace
 		float determinant = dot(v0v1, pvec);
 
 		if (determinant == 0.0f)
-			hit = false;
+			return;
 
 		float invDeterminant = 1.0f / determinant;
 
@@ -127,30 +151,28 @@ namespace
 		float u = dot(tvec, pvec) * invDeterminant;
 
 		if (u < 0.0f || u > 1.0f)
-			hit = false;
+			return;
 
 		float3 qvec = cross(tvec, v0v1);
 		float v = dot(ray.direction, qvec) * invDeterminant;
 
 		if (v < 0.0f || (u + v) > 1.0f)
-			hit = false;
+			return;
 
 		float distance = dot(v0v2, qvec) * invDeterminant;
 
 		if (distance < 0.0f || distance < ray.minDistance || distance > ray.maxDistance || distance > intersection.distance)
-			hit = false;
+			return;
 
 		float w = 1.0f - u - v;
 
-		if (hit)
-		{
-			intersection.wasFound = true;
-			intersection.distance = distance;
-			intersection.position = ray.origin + (distance * ray.direction);
-			intersection.normal = w * triangle.normals[0] + u * triangle.normals[1] + v * triangle.normals[2];
-			//intersection.texcoord = w * triangle.texcoords[0] + u * triangle.texcoords[1] + v * triangle.texcoords[2];
-			intersection.materialIndex = triangle.materialIndex;
-		}
+		intersection.wasFound = true;
+		intersection.distance = distance;
+		intersection.position = ray.origin + (distance * ray.direction);
+		intersection.normal = w * triangle.normals[0] + u * triangle.normals[1] + v * triangle.normals[2];
+		//intersection.texcoord = w * triangle.texcoords[0] + u * triangle.texcoords[1] + v * triangle.texcoords[2];
+		intersection.triangleIndex = triangleIndex;
+		intersection.materialIndex = triangle.materialIndex;
 	}
 
 	// https://mediatech.aalto.fi/~timo/publications/aila2012hpg_techrep.pdf
@@ -185,7 +207,7 @@ namespace
 			if (node.rightOffset == 0)
 			{
 				for (int i = 0; i < node.triangleCount; ++i)
-					intersectTriangle(triangles[node.triangleOffset + i], ray, intersection);
+					intersectTriangle(triangles, node.triangleOffset + i, ray, intersection);
 
 				continue;
 			}
@@ -209,29 +231,114 @@ namespace
 
 		paths[id].filmSample.index = 0;
 		paths[id].filmSample.permutation = randomInt(paths[id].random);
-		paths[id].cameraSample.index = 0;
-		paths[id].cameraSample.permutation = randomInt(paths[id].random);
 	}
 
-	__global__ void traceKernel(const CameraData* __restrict camera,
-	                            const BVHNode* __restrict nodes,
-	                            const Triangle* __restrict triangles,
-	                            const Material* __restrict materials,
-	                            cudaSurfaceObject_t film, uint32_t filmWidth, uint32_t filmHeight)
+	__global__ void clearPixelsKernel(Pixel* pixels, uint32_t pixelCount)
 	{
-		uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
-		uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
+		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
-		Ray ray = getRay(make_float2(x, y), *camera);
-		Intersection intersection;
-		float3 color = make_float3(0.0f, 0.0f, 0.0f);
+		if (id >= pixelCount)
+			return;
 
-		intersectBvh(nodes, triangles, ray, intersection);
+		pixels[id].value = make_float3(0.0f, 0.0f, 0.0f);
+		pixels[id].weight = 0.0f;
+	}
 
-		if (intersection.wasFound)
-			color = materials[intersection.materialIndex].baseColor * dot(ray.direction, -intersection.normal);
+	__global__ void writePixelsKernel(Pixel* pixels, uint32_t pixelCount, cudaSurfaceObject_t film, uint32_t filmWidth)
+	{
+		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
-		surf2Dwrite(make_float4(color, 1.0f), film, x * sizeof(float4), y, cudaBoundaryModeZero);
+		if (id >= pixelCount)
+			return;
+
+		uint32_t x = id % filmWidth;
+		uint32_t y = id / filmWidth;
+		float3 result = make_float3(0.0f, 0.0f, 0.0f);
+		float weight = pixels[id].weight;
+
+		if (weight != 0.0f)
+			result = pixels[id].value / weight;
+
+		surf2Dwrite(make_float4(result, 1.0f), film, x * sizeof(float4), y, cudaBoundaryModeZero);
+	}
+
+	/*
+	 uint32_t filmSampleIndex = paths[id].filmSample.index;
+	 uint32_t filmSamplePermutation = paths[id].filmSample.permutation;
+
+	 if (filmSampleIndex >= filmLength)
+	 {
+	 filmSampleIndex = 0;
+	 paths[id].filmSample.permutation = ++filmSamplePermutation;
+	 }
+
+	 float2 filmSamplePosition = getSample(filmSampleIndex++, filmWidth, filmHeight, filmSamplePermutation);
+	 paths[id].filmSample.index = filmSampleIndex;
+	 paths[id].filmSamplePosition = filmSamplePosition;
+	 paths[id].ray = getRay(filmSamplePosition, *camera);
+	 paths[id].result = make_float3(0.0f, 0.0f, 0.0f);
+	 paths[id].throughput = make_float3(1.0f, 1.0f, 1.0f);
+	 paths[id].state == PathState::RAY_CONTINUATION;
+	 */
+
+	__global__ void logicKernel(Path* __restrict paths, uint32_t pathCount, uint32_t filmWidth, uint32_t filmHeight, uint32_t filmLength)
+	{
+		const uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= pathCount)
+			return;
+	}
+
+	__global__ void newPathKernel(const uint32_t* __restrict newPathQueue, uint32_t newPathQueueLength, Path* __restrict paths, const CameraData* __restrict camera)
+	{
+		const uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= newPathQueueLength)
+			return;
+	}
+
+	__global__ void materialKernel(const uint32_t* __restrict materialQueue, uint32_t materialQueueLength, Path* __restrict paths, const Material* __restrict materials)
+	{
+		const uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= materialQueueLength)
+			return;
+
+		/*Intersection intersection = paths[id].continuationIntersection;
+		const Material material = materials[intersection.materialIndex];
+		paths[id].result = material.baseColor * dot(paths[id].ray.direction, -intersection.normal);*/
+	}
+
+	__global__ void extensionRayKernel(
+		const uint32_t* __restrict extensionRayQueue,
+		uint32_t extensionRayQueueLength,
+		Path* __restrict paths,
+		const BVHNode* __restrict nodes,
+		const Triangle* __restrict triangles)
+	{
+		const uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= extensionRayQueueLength)
+			return;
+
+		//Intersection intersection;
+		//intersectBvh(nodes, triangles, ray, intersection);
+	}
+
+	__global__ void shadowRayKernel(
+		const uint32_t* __restrict shadowRayQueue,
+		uint32_t shadowRayQueueLength,
+		Path* __restrict paths,
+		const BVHNode* __restrict nodes,
+		const Triangle* __restrict triangles)
+	{
+		const uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= shadowRayQueueLength)
+			return;
+
+		//Intersection intersection;
+		//intersectBvh(nodes, triangles, ray, intersection);
 	}
 }
 
@@ -240,23 +347,40 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::checkError(cudaMallocManaged(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&triangles, sizeof(Triangle) * scene.triangles.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&emitters, sizeof(Triangle) * scene.emitters.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&materials, sizeof(Material) * scene.materials.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths, sizeof(Path) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->materialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->extensionRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->shadowRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 
 	CameraData cameraData = scene.camera.getCameraData();
 
 	memcpy(camera, &cameraData, sizeof(CameraData));
 	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
 	memcpy(triangles, scene.triangles.data(), sizeof(Triangle) * scene.triangles.size());
+	memcpy(emitters, scene.emitters.data(), sizeof(Triangle) * scene.emitters.size());
 	memcpy(materials, scene.materials.data(), sizeof(Material) * scene.materials.size());
 
 	uint64_t time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-
 	int blockSize, gridSize;
 	CudaUtils::calculateDimensions(static_cast<void*>(initPathsKernel), "initPaths", pathCount, blockSize, gridSize);
 	initPathsKernel<<<gridSize, blockSize>>>(paths, time, pathCount);
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+
+	queues->newPathQueueLength = 0;
+	queues->materialQueueLength = 0;
+	queues->extensionRayQueueLength = 0;
+	queues->shadowRayQueueLength = 0;
+
+	CudaUtils::calculateDimensions(static_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
+	CudaUtils::calculateDimensions(static_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
+	CudaUtils::calculateDimensions(static_cast<void*>(materialKernel), "materialKernel", pathCount, materialBlockSize, materialGridSize);
+	CudaUtils::calculateDimensions(static_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
+	CudaUtils::calculateDimensions(static_cast<void*>(shadowRayKernel), "shadowRayKernel", pathCount, shadowRayBlockSize, shadowRayGridSize);
 }
 
 void Renderer::shutdown()
@@ -264,8 +388,14 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(camera), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(nodes), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(triangles), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(emitters), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(materials), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->newPathQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->materialQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->extensionRayQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->shadowRayQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues), "Could not free CUDA device memory");
 }
 
 void Renderer::update(const Scene& scene)
@@ -274,20 +404,73 @@ void Renderer::update(const Scene& scene)
 	memcpy(camera, &cameraData, sizeof(CameraData));
 }
 
-void Renderer::filmResized(uint32_t width, uint32_t height)
+void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 {
-	CudaUtils::calculateDimensions2D(static_cast<void*>(traceKernel), "trace", width, height, traceKernelBlockSize, traceKernelGridSize);
+	if (pixels != nullptr)
+		CudaUtils::checkError(cudaFree(pixels), "Could not free CUDA device memory");
+
+	pixelCount = filmWidth * filmHeight;
+	CudaUtils::checkError(cudaMallocManaged(&pixels, sizeof(Pixel) * pixelCount), "Could not allocate CUDA device memory");
+	CudaUtils::calculateDimensions(static_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
+	CudaUtils::calculateDimensions(static_cast<void*>(writePixelsKernel), "writePixelsKernel", pixelCount, writePixelsBlockSize, writePixelsGridSize);
+
+	clear();
+}
+
+void Renderer::clear()
+{
+	clearPixelsKernel<<<clearPixelsGridSize, clearPixelsBlockSize>>>(pixels, pixelCount);
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
 }
 
 void Renderer::render()
 {
 	Film& film = App::getWindow().getFilm();
-	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
-	
-	traceKernel<<<traceKernelGridSize, traceKernelBlockSize>>>(camera, nodes, triangles, materials, filmSurfaceObject, film.getWidth(), film.getHeight());
 
+	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, pathCount, film.getWidth(), film.getHeight(), film.getLength());
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-	
+
+	if (queues->newPathQueueLength > 0)
+	{
+		newPathGridSize = (queues->newPathQueueLength + newPathBlockSize - 1) / newPathBlockSize;
+		newPathKernel<<<newPathGridSize, newPathBlockSize>>>(queues->newPathQueue, queues->newPathQueueLength, paths, camera);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+		queues->newPathQueueLength = 0;
+	}
+
+	if (queues->materialQueueLength > 0)
+	{
+		materialGridSize = (queues->materialQueueLength + materialBlockSize - 1) / materialBlockSize;
+		materialKernel<<<materialGridSize, materialBlockSize>>>(queues->materialQueue, queues->materialQueueLength, paths, materials);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+		queues->materialQueueLength = 0;
+	}
+
+	if (queues->extensionRayQueueLength > 0)
+	{
+		extensionRayGridSize = (queues->extensionRayQueueLength + extensionRayBlockSize - 1) / extensionRayBlockSize;
+		extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(queues->extensionRayQueue, queues->extensionRayQueueLength, paths, nodes, triangles);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+		queues->extensionRayQueueLength = 0;
+	}
+
+	if (queues->shadowRayQueueLength > 0)
+	{
+		shadowRayGridSize = (queues->shadowRayQueueLength + shadowRayBlockSize - 1) / shadowRayBlockSize;
+		shadowRayKernel<<<shadowRayGridSize, shadowRayBlockSize>>>(queues->shadowRayQueue, queues->shadowRayQueueLength, paths, nodes, triangles);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+		queues->shadowRayQueueLength = 0;
+	}
+
+	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
+	writePixelsKernel<<<writePixelsGridSize, writePixelsBlockSize>>>(pixels, pixelCount, filmSurfaceObject, film.getWidth());
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
 	film.releaseFilmSurfaceObject();
 }

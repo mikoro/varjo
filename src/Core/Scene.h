@@ -24,6 +24,7 @@ namespace Varjo
 		Camera camera;
 		std::vector<BVHNode> nodes;
 		std::vector<Triangle> triangles;
+		std::vector<Triangle> emitters;
 		std::vector<Material> materials;
 		std::string modelFileName;
 	};

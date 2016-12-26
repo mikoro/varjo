@@ -16,6 +16,7 @@ namespace Varjo
 		float3 normal;
 		//float2 texcoord;
 		float distance = FLT_MAX;
+		uint32_t triangleIndex = 0;
 		uint32_t materialIndex = 0;
 		bool wasFound = false;
 	};

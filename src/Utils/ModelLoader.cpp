@@ -392,6 +392,12 @@ void ModelLoader::processMaterialFile(const std::string& rootDirectory, const st
 			ss >> currentMaterial.baseColor.y;
 			ss >> currentMaterial.baseColor.z;
 		}
+		else if (part == "emittance" || part == "Ke")
+		{
+			ss >> currentMaterial.emittance.x;
+			ss >> currentMaterial.emittance.y;
+			ss >> currentMaterial.emittance.z;
+		}
 		else if (part == "subsurface")
 			ss >> currentMaterial.subsurface;
 		else if (part == "metallic")
@@ -420,7 +426,7 @@ void ModelLoader::processMaterialFile(const std::string& rootDirectory, const st
 		output.materials.push_back(currentMaterial);
 }
 
-bool ModelLoader::processFace(const char* buffer, uint32_t lineStartIndex, uint32_t lineEndIndex, uint32_t lineNumber, ModelLoaderOutput& result)
+bool ModelLoader::processFace(const char* buffer, uint32_t lineStartIndex, uint32_t lineEndIndex, uint32_t lineNumber, ModelLoaderOutput& output)
 {
 	Log& log = App::getLog();
 
@@ -537,7 +543,10 @@ bool ModelLoader::processFace(const char* buffer, uint32_t lineStartIndex, uint3
 			triangle.texcoords[2] = texcoords[texcoordIndices[i]];
 		}*/
 
-		result.triangles.push_back(triangle);
+		output.triangles.push_back(triangle);
+
+		if (!isZero(output.materials[currentMaterialIndex].emittance))
+			output.emitters.push_back(triangle);
 	}
 
 	return true;

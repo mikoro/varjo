@@ -1450,4 +1450,13 @@ inline __device__ __host__ float4 smoothstep(float4 a, float4 b, float4 x)
     return (y*y*(make_float4(3.0f) - (make_float4(2.0f)*y)));
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// misc
+////////////////////////////////////////////////////////////////////////////////
+
+inline __host__ __device__ bool isZero(float3 v)
+{
+    return v.x == 0.0f && v.y == 0.0f && v.z == 0.0f;
+}
+
 #endif

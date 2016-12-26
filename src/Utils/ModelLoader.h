@@ -24,6 +24,7 @@ namespace Varjo
 	{
 		std::vector<Material> materials;
 		std::vector<Triangle> triangles;
+		std::vector<Triangle> emitters;
 	};
 
 	class ModelLoader

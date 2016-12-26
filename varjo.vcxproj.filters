@@ -193,18 +193,6 @@
     <ClInclude Include="src\Core\Ray.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Path.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Random.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Sample.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\Pixel.h">
-      <Filter>Core</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Utils\Log.inl">

@@ -149,11 +149,7 @@
     <ClInclude Include="src\Core\Camera.h" />
     <ClInclude Include="src\Core\Intersection.h" />
     <ClInclude Include="src\Core\Material.h" />
-    <ClInclude Include="src\Core\Path.h" />
-    <ClInclude Include="src\Core\Pixel.h" />
-    <ClInclude Include="src\Core\Random.h" />
     <ClInclude Include="src\Core\Ray.h" />
-    <ClInclude Include="src\Core\Sample.h" />
     <ClInclude Include="src\Core\Scene.h" />
     <ClInclude Include="src\Core\Triangle.h" />
     <ClInclude Include="src\Cuda\CudaUtils.h" />
