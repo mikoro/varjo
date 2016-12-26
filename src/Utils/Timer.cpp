@@ -30,14 +30,14 @@ float Timer::getElapsedMilliseconds() const
 {
 	auto elapsedTime = sc::high_resolution_clock::now() - startTime;
 	uint64_t totalNanoseconds = sc::duration_cast<sc::nanoseconds>(elapsedTime).count();
-	return float(totalNanoseconds / 1000000.0);
+	return float(double(totalNanoseconds) / 1000000.0);
 }
 
 float Timer::getElapsedSeconds() const
 {
 	auto elapsedTime = sc::high_resolution_clock::now() - startTime;
-	uint64_t totalMilliseconds = sc::duration_cast<sc::milliseconds>(elapsedTime).count();
-	return float(totalMilliseconds / 1000.0);
+	uint64_t totalNanoseconds = sc::duration_cast<sc::nanoseconds>(elapsedTime).count();
+	return float(double(totalNanoseconds) / 1000000000.0);
 }
 
 TimerData Timer::getElapsed() const

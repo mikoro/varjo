@@ -110,6 +110,22 @@ namespace
 		return r;
 	}
 
+	__device__ float mitchellFilter(float s)
+	{
+		const float B = 1.0f / 3.0f;
+		const float C = 1.0f / 3.0f;
+
+		s = abs(s);
+
+		if (s < 1.0f)
+			return ((12.0f - 9.0f * B - 6.0f * C) * (s * s * s) + (-18.0f + 12.0f * B + 6.0f * C) * (s * s) + (6.0f - 2.0f * B)) * (1.0f / 6.0f);
+
+		if (s < 2.0f)
+			return ((-B - 6.0f * C) * (s * s * s) + (6.0f * B + 30.0f * C) * (s * s) + (-12.0f * B - 48.0f * C) * s + (8.0f * B + 24.0f * C)) * (1.0f / 6.0f);
+
+		return 0.0f;
+	}
+
 	__device__ void initRay(Ray& ray)
 	{
 		ray.invD = make_float3(1.0, 1.0f, 1.0f) / ray.direction;
@@ -381,6 +397,9 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::calculateDimensions(static_cast<void*>(materialKernel), "materialKernel", pathCount, materialBlockSize, materialGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(shadowRayKernel), "shadowRayKernel", pathCount, shadowRayBlockSize, shadowRayGridSize);
+
+	averagePathsPerSecond.setAlpha(0.05f);
+	averageRaysPerSecond.setAlpha(0.05f);
 }
 
 void Renderer::shutdown()
@@ -438,7 +457,6 @@ void Renderer::render()
 		newPathKernel<<<newPathGridSize, newPathBlockSize>>>(queues->newPathQueue, queues->newPathQueueLength, paths, camera);
 		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-		queues->newPathQueueLength = 0;
 	}
 
 	if (queues->materialQueueLength > 0)
@@ -447,7 +465,6 @@ void Renderer::render()
 		materialKernel<<<materialGridSize, materialBlockSize>>>(queues->materialQueue, queues->materialQueueLength, paths, materials);
 		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-		queues->materialQueueLength = 0;
 	}
 
 	if (queues->extensionRayQueueLength > 0)
@@ -456,7 +473,6 @@ void Renderer::render()
 		extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(queues->extensionRayQueue, queues->extensionRayQueueLength, paths, nodes, triangles);
 		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-		queues->extensionRayQueueLength = 0;
 	}
 
 	if (queues->shadowRayQueueLength > 0)
@@ -465,7 +481,6 @@ void Renderer::render()
 		shadowRayKernel<<<shadowRayGridSize, shadowRayBlockSize>>>(queues->shadowRayQueue, queues->shadowRayQueueLength, paths, nodes, triangles);
 		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-		queues->shadowRayQueueLength = 0;
 	}
 
 	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
@@ -473,4 +488,24 @@ void Renderer::render()
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
 	film.releaseFilmSurfaceObject();
+
+	float elapsedSeconds = timer.getElapsedSeconds();
+	averagePathsPerSecond.addMeasurement(float(queues->newPathQueueLength) / elapsedSeconds);
+	averageRaysPerSecond.addMeasurement(float(queues->extensionRayQueueLength + queues->shadowRayQueueLength) / elapsedSeconds);
+	timer.restart();
+
+	queues->newPathQueueLength = 0;
+	queues->materialQueueLength = 0;
+	queues->extensionRayQueueLength = 0;
+	queues->shadowRayQueueLength = 0;
+}
+
+float Renderer::getPathsPerSecond() const
+{
+	return averagePathsPerSecond.getAverage();
+}
+
+float Renderer::getRaysPerSecond() const
+{
+	return averageRaysPerSecond.getAverage();
 }

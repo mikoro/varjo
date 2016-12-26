@@ -12,6 +12,8 @@
 #include "Core/Material.h"
 #include "Core/Ray.h"
 #include "Core/Intersection.h"
+#include "Utils/Timer.h"
+#include "Math/MovingAverage.h"
 
 namespace Varjo
 {
@@ -68,6 +70,8 @@ namespace Varjo
 		void filmResized(uint32_t filmWidth, uint32_t filmHeight);
 		void clear();
 		void render();
+		float getPathsPerSecond() const;
+		float getRaysPerSecond() const;
 
 	private:
 
@@ -82,20 +86,24 @@ namespace Varjo
 		Queues* queues = nullptr;
 		Pixel* pixels = nullptr;
 		
-		uint32_t pixelCount;
-		int clearPixelsBlockSize;
-		int clearPixelsGridSize;
-		int writePixelsBlockSize;
-		int writePixelsGridSize;
-		int logicBlockSize;
-		int logicGridSize;
-		int newPathBlockSize;
-		int newPathGridSize;
-		int materialBlockSize;
-		int materialGridSize;
-		int extensionRayBlockSize;
-		int extensionRayGridSize;
-		int shadowRayBlockSize;
-		int shadowRayGridSize;
+		uint32_t pixelCount = 0;
+		int clearPixelsBlockSize = 0;
+		int clearPixelsGridSize = 0;
+		int writePixelsBlockSize = 0;
+		int writePixelsGridSize = 0;
+		int logicBlockSize = 0;
+		int logicGridSize = 0;
+		int newPathBlockSize = 0;
+		int newPathGridSize = 0;
+		int materialBlockSize = 0;
+		int materialGridSize = 0;
+		int extensionRayBlockSize = 0;
+		int extensionRayGridSize = 0;
+		int shadowRayBlockSize = 0;
+		int shadowRayGridSize = 0;
+
+		Timer timer;
+		MovingAverage averagePathsPerSecond;
+		MovingAverage averageRaysPerSecond;
 	};
 }

@@ -37,7 +37,7 @@ void InfoPanel::initialize()
 	nvgCreateFont(context, "mono", "data/fonts/RobotoMono-Regular.ttf");
 }
 
-void InfoPanel::render(const Scene& scene)
+void InfoPanel::render(const Scene& scene, const Renderer& renderer)
 {
 	if (currentState == InfoPanelState::OFF)
 		return;
@@ -55,7 +55,7 @@ void InfoPanel::render(const Scene& scene)
 	if (currentState == InfoPanelState::FPS)
 		renderFps();
 	else if (currentState == InfoPanelState::FULL)
-		renderFull(scene);
+		renderFull(scene, renderer);
 
 	nvgEndFrame(context);
 }
@@ -116,7 +116,7 @@ void InfoPanel::renderFps()
 	nvgText(context, currentX, currentY, fpsString.c_str(), nullptr);
 }
 
-void InfoPanel::renderFull(const Scene& scene)
+void InfoPanel::renderFull(const Scene& scene, const Renderer& renderer)
 {
 	Settings& settings = App::getSettings();
 	Window& window = App::getWindow();
@@ -190,5 +190,11 @@ void InfoPanel::renderFull(const Scene& scene)
 	currentY += lineSpacing;
 
 	nvgText(context, currentX, currentY, tfm::format("Rotation: (%.2f, %.2f, %.2f)", scene.camera.orientation.pitch, scene.camera.orientation.yaw, scene.camera.orientation.roll).c_str(), nullptr);
+	currentY += lineSpacing;
+
+	nvgText(context, currentX, currentY, tfm::format("Paths/s: %s", StringUtils::humanizeNumber(renderer.getPathsPerSecond())).c_str(), nullptr);
+	currentY += lineSpacing;
+
+	nvgText(context, currentX, currentY, tfm::format("Rays/s: %s", StringUtils::humanizeNumber(renderer.getRaysPerSecond())).c_str(), nullptr);
 	currentY += lineSpacing;
 }

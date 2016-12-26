@@ -294,7 +294,7 @@ void Window::render(float timeStep, float interpolation)
 
 	renderer.render();
 	film.render();
-	infoPanel.render(scene);
+	infoPanel.render(scene, renderer);
 
 	glfwSwapBuffers(glfwWindow);
 }

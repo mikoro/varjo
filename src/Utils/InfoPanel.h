@@ -18,7 +18,7 @@ namespace Varjo
 		~InfoPanel();
 
 		void initialize();
-		void render(const Scene& scene);
+		void render(const Scene& scene, const Renderer& renderer);
 
 		void setState(InfoPanelState state);
 		void selectNextState();
@@ -26,7 +26,7 @@ namespace Varjo
 	private:
 
 		void renderFps();
-		void renderFull(const Scene& scene);
+		void renderFull(const Scene& scene, const Renderer& renderer);
 
 		NVGcontext* context = nullptr;
 		InfoPanelState currentState = InfoPanelState::OFF;
