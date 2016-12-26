@@ -34,12 +34,10 @@ namespace Varjo
 		Random random;
 		Sample filmSample;
 		float2 filmSamplePosition;
-		Ray extensionRay;
-		Ray shadowRay;
-		Intersection extensionIntersection;
-		Intersection shadowIntersection;
-		float3 result;
 		float3 throughput;
+		float3 result;
+		Ray ray;
+		Intersection intersection;
 	};
 
 	struct Queues
@@ -56,7 +54,7 @@ namespace Varjo
 
 	struct Pixel
 	{
-		float3 value;
+		float3 color;
 		float weight;
 	};
 

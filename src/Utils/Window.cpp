@@ -280,6 +280,9 @@ void Window::update(float timeStep)
 
 	scene.camera.update(timeStep);
 	renderer.update(scene);
+
+	if (scene.camera.isMoving())
+		renderer.clear();
 }
 
 void Window::render(float timeStep, float interpolation)

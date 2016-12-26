@@ -26,7 +26,7 @@ void Scene::initialize()
 	ModelLoaderOutput modelOutput = modelLoader.load(modelFileName);
 
 	triangles = modelOutput.triangles;
-	triangles = modelOutput.emitters;
+	emitters = modelOutput.emitters;
 	materials = modelOutput.materials;
 
 	BVH::build(triangles, nodes);
