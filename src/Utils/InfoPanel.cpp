@@ -135,7 +135,7 @@ void InfoPanel::renderFull(const Scene& scene, const Renderer& renderer)
 	nvgTextBounds(context, 0.0f, 0.0f, "1234567890.", nullptr, bounds);
 	float charWidth = (bounds[2] - bounds[0]) / 11.0f;
 	float panelWidth = 34 * charWidth;
-	float panelHeight = 8 * lineSpacing + lineSpacing / 2.0f;
+	float panelHeight = 10 * lineSpacing + lineSpacing / 2.0f;
 	float currentX = charWidth / 2.0f + 4.0f;
 	float currentY = -bounds[1] + 4.0f;
 

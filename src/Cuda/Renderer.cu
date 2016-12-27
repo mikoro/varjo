@@ -210,7 +210,7 @@ namespace
 	__device__ void intersectBvh(const BVHNode* __restrict nodes, const Triangle* __restrict triangles, const Ray& ray, Intersection& intersection)
 	{
 		BVHNode node;
-		uint32_t stack[64];
+		uint32_t stack[16];
 		uint32_t stackIndex = 1;
 		stack[0] = 0;
 
@@ -287,11 +287,26 @@ namespace
 		surf2Dwrite(make_float4(color, 1.0f), film, x * sizeof(float4), y, cudaBoundaryModeZero);
 	}
 
+	__device__ inline uint32_t lane_id() { return threadIdx.x % 32; }
+	__device__ uint32_t warp_bcast(uint32_t v, uint32_t leader) { return __shfl(v, leader); }
+	__device__ uint32_t atomicAggInc(uint32_t* ctr)
+	{
+		uint32_t mask = __ballot(1);
+		uint32_t leader = __ffs(mask) - 1;
+		uint32_t res;
+
+		if (lane_id() == leader)
+			res = atomicAdd(ctr, __popc(mask));
+
+		res = warp_bcast(res, leader);
+		return res + __popc(mask & ((1 << lane_id()) - 1));
+	}
+
 	// https://mediatech.aalto.fi/~samuli/publications/laine2013hpg_paper.pdf
 	__global__ void logicKernel(
 		Path* __restrict paths,
-		Pixel* __restrict pixels,
 		Queues* __restrict queues,
+		Pixel* __restrict pixels,
 		uint32_t pathCount,
 		uint32_t filmWidth,
 		uint32_t filmHeight)
@@ -301,7 +316,7 @@ namespace
 		if (id >= pathCount)
 			return;
 
-		Path path = paths[id];
+		const Path& path = paths[id];
 
 		// add russian roulette
 
@@ -321,42 +336,40 @@ namespace
 					float2 pixelPosition = make_float2(float(px), float(py));
 					float2 distance = pixelPosition - path.filmSamplePosition;
 					float weight = mitchellFilter(distance.x) * mitchellFilter(distance.y);
-					float3 result = weight * path.result;
+					float3 color = weight * path.result;
 					int pixelIndex = py * int(filmWidth) + px;
-
-					atomicAdd(&(pixels[pixelIndex].color.x), result.x);
-					atomicAdd(&(pixels[pixelIndex].color.y), result.y);
-					atomicAdd(&(pixels[pixelIndex].color.z), result.z);
+					
+					atomicAdd(&(pixels[pixelIndex].color.x), color.x);
+					atomicAdd(&(pixels[pixelIndex].color.y), color.y);
+					atomicAdd(&(pixels[pixelIndex].color.z), color.z);
 					atomicAdd(&(pixels[pixelIndex].weight), weight);
 				}
 			}
 
-			uint32_t queueIndex = atomicAdd(&queues->newPathQueueLength, 1);
+			uint32_t queueIndex = atomicAggInc(&queues->newPathQueueLength);
 			queues->newPathQueue[queueIndex] = id;
 		}
 		else // determine intersection material, add to material queue
 		{
-			uint32_t queueIndex = atomicAdd(&queues->materialQueueLength, 1);
+			uint32_t queueIndex = atomicAggInc(&queues->materialQueueLength);
 			queues->materialQueue[queueIndex] = id;
 		}
 	}
 
 	__global__ void newPathKernel(
-		const uint32_t* __restrict newPathQueue,
-		const CameraData* __restrict camera,
 		Path* __restrict paths,
 		Queues* __restrict queues,
-		uint32_t newPathQueueLength,
+		const CameraData* __restrict camera,
 		uint32_t filmWidth,
 		uint32_t filmHeight,
 		uint32_t filmLength)
 	{
 		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
-		if (id >= newPathQueueLength)
+		if (id >= queues->newPathQueueLength)
 			return;
 
-		id = newPathQueue[id];
+		id = queues->newPathQueue[id];
 
 		uint32_t filmSampleIndex = paths[id].filmSample.index;
 		uint32_t filmSamplePermutation = paths[id].filmSample.permutation;
@@ -374,47 +387,40 @@ namespace
 		paths[id].result = make_float3(0.0f, 0.0f, 0.0f);
 		paths[id].ray = getCameraRay(*camera, filmSamplePosition);
 
-		uint32_t queueIndex = atomicAdd(&queues->extensionRayQueueLength, 1);
+		uint32_t queueIndex = atomicAggInc(&queues->extensionRayQueueLength);
 		queues->extensionRayQueue[queueIndex] = id;
 	}
 
 	__global__ void materialKernel(
-		const uint32_t* __restrict materialQueue,
-		const Material* __restrict materials,
 		Path* __restrict paths,
-		uint32_t materialQueueLength)
+		const Queues* __restrict queues,
+		const Material* __restrict materials)
 	{
 		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
-		if (id >= materialQueueLength)
+		if (id >= queues->materialQueueLength)
 			return;
 
-		id = materialQueue[id];
+		id = queues->materialQueue[id];
 
-		Intersection intersection = paths[id].intersection;
-
-		if (intersection.wasFound)
-		{
-			Material material = materials[intersection.materialIndex];
-			paths[id].result = material.baseColor * dot(paths[id].ray.direction, -intersection.normal);
-		}
-		
+		const Intersection& intersection = paths[id].intersection;
+		const Material& material = materials[intersection.materialIndex];
+		paths[id].result = material.baseColor * dot(paths[id].ray.direction, -intersection.normal);
 		paths[id].throughput = make_float3(0.0f, 0.0f, 0.0f);
 	}
 
 	__global__ void extensionRayKernel(
-		const uint32_t* __restrict extensionRayQueue,
-		const BVHNode* __restrict nodes,
-		const Triangle* __restrict triangles,
 		Path* __restrict paths,
-		uint32_t extensionRayQueueLength)
+		const Queues* __restrict queues,
+		const BVHNode* __restrict nodes,
+		const Triangle* __restrict triangles)
 	{
 		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
-		if (id >= extensionRayQueueLength)
+		if (id >= queues->extensionRayQueueLength)
 			return;
 
-		id = extensionRayQueue[id];
+		id = queues->extensionRayQueue[id];
 
 		Ray ray = paths[id].ray;
 		Intersection intersection;
@@ -512,41 +518,10 @@ void Renderer::render()
 {
 	Film& film = App::getWindow().getFilm();
 
-	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, pixels, queues, pathCount, film.getWidth(), film.getHeight());
-	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-
-	if (queues->newPathQueueLength > 0)
-	{
-		newPathGridSize = (queues->newPathQueueLength + newPathBlockSize - 1) / newPathBlockSize;
-		newPathKernel<<<newPathGridSize, newPathBlockSize>>>(queues->newPathQueue, camera, paths, queues, queues->newPathQueueLength, film.getWidth(), film.getHeight(), film.getLength());
-		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-	}
-
-	if (queues->materialQueueLength > 0)
-	{
-		materialGridSize = (queues->materialQueueLength + materialBlockSize - 1) / materialBlockSize;
-		materialKernel<<<materialGridSize, materialBlockSize>>>(queues->materialQueue, materials, paths, queues->materialQueueLength);
-		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-	}
-
-	if (queues->extensionRayQueueLength > 0)
-	{
-		extensionRayGridSize = (queues->extensionRayQueueLength + extensionRayBlockSize - 1) / extensionRayBlockSize;
-		extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(queues->extensionRayQueue, nodes, triangles, paths, queues->extensionRayQueueLength);
-		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-	}
-
-	/*if (queues->shadowRayQueueLength > 0)
-	{
-		shadowRayGridSize = (queues->shadowRayQueueLength + shadowRayBlockSize - 1) / shadowRayBlockSize;
-		shadowRayKernel<<<shadowRayGridSize, shadowRayBlockSize>>>(queues->shadowRayQueue, queues->shadowRayQueueLength, paths, nodes, triangles);
-		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-	}*/
+	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, queues, pixels, pathCount, film.getWidth(), film.getHeight());
+	newPathKernel<<<newPathGridSize, newPathBlockSize>>>(paths, queues, camera, film.getWidth(), film.getHeight(), film.getLength());
+	materialKernel<<<materialGridSize, materialBlockSize>>>(paths, queues, materials);
+	extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(paths, queues, nodes, triangles);
 
 	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
 	writePixelsKernel<<<writePixelsGridSize, writePixelsBlockSize>>>(pixels, pixelCount, filmSurfaceObject, film.getWidth());

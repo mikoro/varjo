@@ -255,7 +255,7 @@ inline __host__ __device__ int2 operator-(int2 &a)
 {
     return make_int2(-a.x, -a.y);
 }
-inline __host__ __device__ float3 operator-(float3 &a)
+inline __host__ __device__ float3 operator-(const float3 &a)
 {
     return make_float3(-a.x, -a.y, -a.z);
 }

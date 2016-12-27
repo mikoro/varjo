@@ -42,14 +42,15 @@ namespace Varjo
 
 	struct Queues
 	{
-		uint32_t newPathQueueLength;
 		uint32_t* newPathQueue;
-		uint32_t materialQueueLength;
 		uint32_t* materialQueue;
-		uint32_t extensionRayQueueLength;
 		uint32_t* extensionRayQueue;
-		uint32_t shadowRayQueueLength;
 		uint32_t* shadowRayQueue;
+
+		uint32_t newPathQueueLength;
+		uint32_t materialQueueLength;
+		uint32_t extensionRayQueueLength;
+		uint32_t shadowRayQueueLength;
 	};
 
 	struct Pixel
@@ -73,7 +74,7 @@ namespace Varjo
 
 	private:
 
-		const uint32_t pathCount = 256000;
+		const uint32_t pathCount = 1000000;
 
 		CameraData* camera = nullptr;
 		BVHNode* nodes = nullptr;
