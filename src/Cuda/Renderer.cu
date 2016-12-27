@@ -150,7 +150,7 @@ namespace
 	// http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 	__device__ void intersectTriangle(const Triangle* __restrict triangles, uint32_t triangleIndex, const Ray& ray, Intersection& intersection)
 	{
-		const Triangle triangle = triangles[triangleIndex];
+		const Triangle& triangle = triangles[triangleIndex];
 
 		float3 v0v1 = triangle.vertices[1] - triangle.vertices[0];
 		float3 v0v2 = triangle.vertices[2] - triangle.vertices[0];
@@ -243,13 +243,13 @@ namespace
 		if (id >= pathCount)
 			return;
 
-		initRandom(paths[id].random, seed, uint64_t(id));
+		initRandom(paths->random[id], seed, uint64_t(id));
 
-		paths[id].filmSample.index = 0;
-		paths[id].filmSample.permutation = randomInt(paths[id].random);
-		paths[id].filmSamplePosition = make_float2(0.0f, 0.0f);
-		paths[id].throughput = make_float3(0.0f, 0.0f, 0.0f);
-		paths[id].result = make_float3(0.0f, 0.0f, 0.0f);
+		paths->filmSample[id].index = 0;
+		paths->filmSample[id].permutation = randomInt(paths->random[id]);
+		paths->filmSamplePosition[id] = make_float2(0.0f, 0.0f);
+		paths->throughput[id] = make_float3(0.0f, 0.0f, 0.0f);
+		paths->result[id] = make_float3(0.0f, 0.0f, 0.0f);
 	}
 
 	__global__ void clearPixelsKernel(Pixel* pixels, uint32_t pixelCount)
@@ -287,19 +287,19 @@ namespace
 		surf2Dwrite(make_float4(color, 1.0f), film, x * sizeof(float4), y, cudaBoundaryModeZero);
 	}
 
-	__device__ inline uint32_t lane_id() { return threadIdx.x % 32; }
-	__device__ uint32_t warp_bcast(uint32_t v, uint32_t leader) { return __shfl(v, leader); }
+	// https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-optimized-filtering-warp-aggregated-atomics/
 	__device__ uint32_t atomicAggInc(uint32_t* ctr)
 	{
 		uint32_t mask = __ballot(1);
 		uint32_t leader = __ffs(mask) - 1;
+		uint32_t laneid = threadIdx.x % 32;
 		uint32_t res;
 
-		if (lane_id() == leader)
+		if (laneid == leader)
 			res = atomicAdd(ctr, __popc(mask));
 
-		res = warp_bcast(res, leader);
-		return res + __popc(mask & ((1 << lane_id()) - 1));
+		res = __shfl(res, leader);
+		return res + __popc(mask & ((1 << laneid) - 1));
 	}
 
 	// https://mediatech.aalto.fi/~samuli/publications/laine2013hpg_paper.pdf
@@ -316,14 +316,12 @@ namespace
 		if (id >= pathCount)
 			return;
 
-		const Path& path = paths[id];
-
 		// add russian roulette
 
-		if (!path.intersection.wasFound || isZero(path.throughput)) // path is terminated
+		if (!paths->intersection[id].wasFound || isZero(paths->throughput[id])) // path is terminated
 		{
-			int ox = int(path.filmSamplePosition.x);
-			int oy = int(path.filmSamplePosition.y);
+			int ox = int(paths->filmSamplePosition[id].x);
+			int oy = int(paths->filmSamplePosition[id].y);
 
 			for (int tx = -1; tx <= 2; ++tx)
 			{
@@ -334,9 +332,9 @@ namespace
 					px = clamp(px, 0, int(filmWidth));
 					py = clamp(py, 0, int(filmHeight));
 					float2 pixelPosition = make_float2(float(px), float(py));
-					float2 distance = pixelPosition - path.filmSamplePosition;
+					float2 distance = pixelPosition - paths->filmSamplePosition[id];
 					float weight = mitchellFilter(distance.x) * mitchellFilter(distance.y);
-					float3 color = weight * path.result;
+					float3 color = weight * paths->result[id];
 					int pixelIndex = py * int(filmWidth) + px;
 					
 					atomicAdd(&(pixels[pixelIndex].color.x), color.x);
@@ -371,21 +369,21 @@ namespace
 
 		id = queues->newPathQueue[id];
 
-		uint32_t filmSampleIndex = paths[id].filmSample.index;
-		uint32_t filmSamplePermutation = paths[id].filmSample.permutation;
+		uint32_t filmSampleIndex = paths->filmSample[id].index;
+		uint32_t filmSamplePermutation = paths->filmSample[id].permutation;
 
 		if (filmSampleIndex >= filmLength)
 		{
 			filmSampleIndex = 0;
-			paths[id].filmSample.permutation = ++filmSamplePermutation;
+			paths->filmSample[id].permutation = ++filmSamplePermutation;
 		}
 
 		float2 filmSamplePosition = getSample(filmSampleIndex++, filmWidth, filmHeight, filmSamplePermutation);
-		paths[id].filmSample.index = filmSampleIndex;
-		paths[id].filmSamplePosition = filmSamplePosition;
-		paths[id].throughput = make_float3(1.0f, 1.0f, 1.0f);
-		paths[id].result = make_float3(0.0f, 0.0f, 0.0f);
-		paths[id].ray = getCameraRay(*camera, filmSamplePosition);
+		paths->filmSample[id].index = filmSampleIndex;
+		paths->filmSamplePosition[id] = filmSamplePosition;
+		paths->throughput[id] = make_float3(1.0f, 1.0f, 1.0f);
+		paths->result[id] = make_float3(0.0f, 0.0f, 0.0f);
+		paths->ray[id] = getCameraRay(*camera, filmSamplePosition);
 
 		uint32_t queueIndex = atomicAggInc(&queues->extensionRayQueueLength);
 		queues->extensionRayQueue[queueIndex] = id;
@@ -403,10 +401,10 @@ namespace
 
 		id = queues->materialQueue[id];
 
-		const Intersection& intersection = paths[id].intersection;
+		const Intersection& intersection = paths->intersection[id];
 		const Material& material = materials[intersection.materialIndex];
-		paths[id].result = material.baseColor * dot(paths[id].ray.direction, -intersection.normal);
-		paths[id].throughput = make_float3(0.0f, 0.0f, 0.0f);
+		paths->result[id] = material.baseColor * dot(paths->ray[id].direction, -intersection.normal);
+		paths->throughput[id] = make_float3(0.0f, 0.0f, 0.0f);
 	}
 
 	__global__ void extensionRayKernel(
@@ -422,10 +420,10 @@ namespace
 
 		id = queues->extensionRayQueue[id];
 
-		Ray ray = paths[id].ray;
+		Ray ray = paths->ray[id];
 		Intersection intersection;
 		intersectBvh(nodes, triangles, ray, intersection);
-		paths[id].intersection = intersection;
+		paths->intersection[id] = intersection;
 	}
 }
 
@@ -436,7 +434,14 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::checkError(cudaMallocManaged(&triangles, sizeof(Triangle) * scene.triangles.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&emitters, sizeof(Triangle) * scene.emitters.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&materials, sizeof(Material) * scene.materials.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths, sizeof(Path) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths, sizeof(Path)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->random, sizeof(Random) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->filmSample, sizeof(Sample) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->filmSamplePosition, sizeof(float2) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->throughput, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->result, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->ray, sizeof(Ray) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->intersection, sizeof(Intersection) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->materialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
@@ -480,6 +485,13 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(triangles), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(emitters), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(materials), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->random), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->filmSample), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->filmSamplePosition), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->throughput), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->result), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->ray), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->intersection), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->newPathQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->materialQueue), "Could not free CUDA device memory");

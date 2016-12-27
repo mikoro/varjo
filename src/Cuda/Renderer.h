@@ -31,13 +31,13 @@ namespace Varjo
 
 	struct Path
 	{
-		Random random;
-		Sample filmSample;
-		float2 filmSamplePosition;
-		float3 throughput;
-		float3 result;
-		Ray ray;
-		Intersection intersection;
+		Random* random;
+		Sample* filmSample;
+		float2* filmSamplePosition;
+		float3* throughput;
+		float3* result;
+		Ray* ray;
+		Intersection* intersection;
 	};
 
 	struct Queues
