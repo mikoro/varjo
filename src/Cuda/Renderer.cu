@@ -14,6 +14,8 @@
 
 using namespace Varjo;
 
+__device__ const float RAY_EPSILON = 0.0001f;
+
 namespace
 {
 	// http://www.pcg-random.org/
@@ -91,7 +93,7 @@ namespace
 	}
 
 	// http://graphics.pixar.com/library/MultiJitteredSampling/
-	__device__ float2 getSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p)
+	__device__ float2 getFilmSample(uint32_t s, uint32_t m, uint32_t n, uint32_t p)
 	{
 		// if s is not permutated, the samples will come out in scanline order
 		s = permute(s, m * n, p * 0xa511e9b3);
@@ -108,6 +110,40 @@ namespace
 		r.y = float(y) + float(sx) / float(m);
 
 		return r;
+	}
+
+	__device__ float3 getCosineSample(Random& random, const float3& normal)
+	{
+		float u1 = randomFloat(random);
+		float u2 = randomFloat(random);
+		float r = sqrtf(u1);
+		float theta = 2.0f * float(M_PI) * u2;
+		float x = r * cosf(theta);
+		float y = r * sinf(theta);
+		float z = sqrtf(fmaxf(0.0f, 1.0f - u1));
+
+		float3 u = normalize(cross(normal, make_float3(0.0001f, 1.0000f, 0.0001f)));
+		float3 v = normalize(cross(u, normal));
+
+		return x * u + y * v + z * normal;
+	}
+
+	__device__ float getCosinePdf(const float3& normal, const float3& direction)
+	{
+		return dot(normal, direction) / float(M_PI);
+	}
+
+	__device__ float3 getTriangleSample(Random& random, const Triangle& triangle)
+	{
+		float r1 = randomFloat(random);
+		float r2 = randomFloat(random);
+		float sr1 = sqrtf(r1);
+
+		float u = 1.0f - sr1;
+		float v = r2 * sr1;
+		float w = 1.0f - u - v;
+
+		return u * triangle.vertices[0] + v * triangle.vertices[1] + w * triangle.vertices[2];
 	}
 
 	__device__ float mitchellFilter(float s)
@@ -249,7 +285,7 @@ namespace
 		paths->filmSample[id].permutation = randomInt(paths->random[id]);
 		paths->filmSamplePosition[id] = make_float2(0.0f, 0.0f);
 		paths->throughput[id] = make_float3(0.0f, 0.0f, 0.0f);
-		paths->result[id] = make_float3(0.0f, 0.0f, 0.0f);
+		paths->color[id] = make_float3(0.0f, 0.0f, 0.0f);
 	}
 
 	__global__ void clearPixelsKernel(Pixel* pixels, uint32_t pixelCount)
@@ -306,8 +342,10 @@ namespace
 	__global__ void logicKernel(
 		Path* __restrict paths,
 		Queues* __restrict queues,
+		uint32_t* __restrict emitters,
 		Pixel* __restrict pixels,
 		uint32_t pathCount,
+		uint32_t emitterCount,
 		uint32_t filmWidth,
 		uint32_t filmHeight)
 	{
@@ -334,7 +372,7 @@ namespace
 					float2 pixelPosition = make_float2(float(px), float(py));
 					float2 distance = pixelPosition - paths->filmSamplePosition[id];
 					float weight = mitchellFilter(distance.x) * mitchellFilter(distance.y);
-					float3 color = weight * paths->result[id];
+					float3 color = weight * paths->color[id];
 					int pixelIndex = py * int(filmWidth) + px;
 					
 					atomicAdd(&(pixels[pixelIndex].color.x), color.x);
@@ -378,11 +416,11 @@ namespace
 			paths->filmSample[id].permutation = ++filmSamplePermutation;
 		}
 
-		float2 filmSamplePosition = getSample(filmSampleIndex++, filmWidth, filmHeight, filmSamplePermutation);
+		float2 filmSamplePosition = getFilmSample(filmSampleIndex++, filmWidth, filmHeight, filmSamplePermutation);
 		paths->filmSample[id].index = filmSampleIndex;
 		paths->filmSamplePosition[id] = filmSamplePosition;
 		paths->throughput[id] = make_float3(1.0f, 1.0f, 1.0f);
-		paths->result[id] = make_float3(0.0f, 0.0f, 0.0f);
+		paths->color[id] = make_float3(0.0f, 0.0f, 0.0f);
 		paths->ray[id] = getCameraRay(*camera, filmSamplePosition);
 
 		uint32_t queueIndex = atomicAggInc(&queues->extensionRayQueueLength);
@@ -403,7 +441,7 @@ namespace
 
 		const Intersection& intersection = paths->intersection[id];
 		const Material& material = materials[intersection.materialIndex];
-		paths->result[id] = material.baseColor * dot(paths->ray[id].direction, -intersection.normal);
+		paths->color[id] = material.baseColor * dot(paths->ray[id].direction, -intersection.normal);
 		paths->throughput[id] = make_float3(0.0f, 0.0f, 0.0f);
 	}
 
@@ -425,6 +463,43 @@ namespace
 		intersectBvh(nodes, triangles, ray, intersection);
 		paths->intersection[id] = intersection;
 	}
+
+	__global__ void directLightKernel(
+		Path* __restrict paths,
+		const Queues* __restrict queues,
+		const BVHNode* __restrict nodes,
+		const Triangle* __restrict triangles,
+		const uint32_t* __restrict emitters,
+		uint32_t emitterCount)
+	{
+		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
+
+		if (id >= queues->directLightQueueLength)
+			return;
+
+		id = queues->directLightQueue[id];
+		uint32_t emitterIndex = randomInt(paths->random[id], emitterCount);
+		Triangle emitter = triangles[emitters[emitterIndex]];
+		float3 emitterPosition = getTriangleSample(paths->random[id], emitter);
+		float3 toEmitter = emitterPosition - paths->intersection[id].position;
+		float3 toEmitterDir = normalize(toEmitter);
+		float toEmitterDist = length(toEmitter);
+
+		Ray ray;
+		ray.origin = paths->intersection[id].position;
+		ray.direction = toEmitterDir;
+		ray.minDistance = RAY_EPSILON;
+		ray.maxDistance = toEmitterDist - RAY_EPSILON;
+		initRay(ray);
+
+		Intersection intersection;
+		intersectBvh(nodes, triangles, ray, intersection);
+
+		if (!intersection.wasFound)
+		{
+			
+		}
+	}
 }
 
 void Renderer::initialize(const Scene& scene)
@@ -432,28 +507,28 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::checkError(cudaMallocManaged(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&triangles, sizeof(Triangle) * scene.triangles.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&emitters, sizeof(Triangle) * scene.emitters.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&emitters, sizeof(uint32_t) * scene.emitters.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&materials, sizeof(Material) * scene.materials.size()), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths, sizeof(Path)), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->random, sizeof(Random) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->filmSample, sizeof(Sample) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->filmSamplePosition, sizeof(float2) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->throughput, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->result, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&paths->color, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->ray, sizeof(Ray) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->intersection, sizeof(Intersection) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->materialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->extensionRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->shadowRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->directLightQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 
 	CameraData cameraData = scene.camera.getCameraData();
 
 	memcpy(camera, &cameraData, sizeof(CameraData));
 	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
 	memcpy(triangles, scene.triangles.data(), sizeof(Triangle) * scene.triangles.size());
-	memcpy(emitters, scene.emitters.data(), sizeof(Triangle) * scene.emitters.size());
+	memcpy(emitters, scene.emitters.data(), sizeof(uint32_t) * scene.emitters.size());
 	memcpy(materials, scene.materials.data(), sizeof(Material) * scene.materials.size());
 
 	uint64_t time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -466,16 +541,18 @@ void Renderer::initialize(const Scene& scene)
 	queues->newPathQueueLength = 0;
 	queues->materialQueueLength = 0;
 	queues->extensionRayQueueLength = 0;
-	queues->shadowRayQueueLength = 0;
+	queues->directLightQueueLength = 0;
 
 	CudaUtils::calculateDimensions(static_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(materialKernel), "materialKernel", pathCount, materialBlockSize, materialGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
-	//CudaUtils::calculateDimensions(static_cast<void*>(shadowRayKernel), "shadowRayKernel", pathCount, shadowRayBlockSize, shadowRayGridSize);
+	CudaUtils::calculateDimensions(static_cast<void*>(directLightKernel), "directLightKernel", pathCount, directLightBlockSize, directLightGridSize);
 
 	averagePathsPerSecond.setAlpha(0.05f);
 	averageRaysPerSecond.setAlpha(0.05f);
+
+	emitterCount = uint32_t(scene.emitters.size());
 }
 
 void Renderer::shutdown()
@@ -489,14 +566,14 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(paths->filmSample), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths->filmSamplePosition), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths->throughput), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->result), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(paths->color), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths->ray), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths->intersection), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->newPathQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->materialQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->extensionRayQueue), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->shadowRayQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->directLightQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues), "Could not free CUDA device memory");
 }
 
@@ -530,7 +607,7 @@ void Renderer::render()
 {
 	Film& film = App::getWindow().getFilm();
 
-	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, queues, pixels, pathCount, film.getWidth(), film.getHeight());
+	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, queues, emitters, pixels, pathCount, emitterCount, film.getWidth(), film.getHeight());
 	newPathKernel<<<newPathGridSize, newPathBlockSize>>>(paths, queues, camera, film.getWidth(), film.getHeight(), film.getLength());
 	materialKernel<<<materialGridSize, materialBlockSize>>>(paths, queues, materials);
 	extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(paths, queues, nodes, triangles);
@@ -543,13 +620,13 @@ void Renderer::render()
 
 	float elapsedSeconds = timer.getElapsedSeconds();
 	averagePathsPerSecond.addMeasurement(float(queues->newPathQueueLength) / elapsedSeconds);
-	averageRaysPerSecond.addMeasurement(float(queues->extensionRayQueueLength + queues->shadowRayQueueLength) / elapsedSeconds);
+	averageRaysPerSecond.addMeasurement(float(queues->extensionRayQueueLength + queues->directLightQueueLength) / elapsedSeconds);
 	timer.restart();
 
 	queues->newPathQueueLength = 0;
 	queues->materialQueueLength = 0;
 	queues->extensionRayQueueLength = 0;
-	queues->shadowRayQueueLength = 0;
+	queues->directLightQueueLength = 0;
 }
 
 float Renderer::getPathsPerSecond() const

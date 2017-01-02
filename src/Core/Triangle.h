@@ -11,11 +11,14 @@ namespace Varjo
 {
 	struct Triangle
 	{
+		void initialize();
 		AABB getAABB() const;
 
 		float3 vertices[3];
 		float3 normals[3];
-		//float2 texcoords[3];
+		float2 texcoords[3];
+		float3 normal;
+		float area;
 		uint32_t materialIndex = 0;
 	};
 }

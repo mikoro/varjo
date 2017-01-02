@@ -544,9 +544,6 @@ bool ModelLoader::processFace(const char* buffer, uint32_t lineStartIndex, uint3
 		}*/
 
 		output.triangles.push_back(triangle);
-
-		if (!isZero(output.materials[currentMaterialIndex].emittance))
-			output.emitters.push_back(triangle);
 	}
 
 	return true;

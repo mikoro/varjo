@@ -35,9 +35,12 @@ namespace Varjo
 		Sample* filmSample;
 		float2* filmSamplePosition;
 		float3* throughput;
-		float3* result;
+		float3* color;
 		Ray* ray;
 		Intersection* intersection;
+		uint32_t* length;
+		uint32_t* emitterIndex;
+		float3* emitterPosition;
 	};
 
 	struct Queues
@@ -45,12 +48,12 @@ namespace Varjo
 		uint32_t* newPathQueue;
 		uint32_t* materialQueue;
 		uint32_t* extensionRayQueue;
-		uint32_t* shadowRayQueue;
+		uint32_t* directLightQueue;
 
 		uint32_t newPathQueueLength;
 		uint32_t materialQueueLength;
 		uint32_t extensionRayQueueLength;
-		uint32_t shadowRayQueueLength;
+		uint32_t directLightQueueLength;
 	};
 
 	struct Pixel
@@ -79,13 +82,15 @@ namespace Varjo
 		CameraData* camera = nullptr;
 		BVHNode* nodes = nullptr;
 		Triangle* triangles = nullptr;
-		Triangle* emitters = nullptr;
+		uint32_t* emitters = nullptr;
 		Material* materials = nullptr;
 		Path* paths = nullptr;
 		Queues* queues = nullptr;
 		Pixel* pixels = nullptr;
 		
+		uint32_t emitterCount = 0;
 		uint32_t pixelCount = 0;
+
 		int clearPixelsBlockSize = 0;
 		int clearPixelsGridSize = 0;
 		int writePixelsBlockSize = 0;
@@ -98,8 +103,8 @@ namespace Varjo
 		int materialGridSize = 0;
 		int extensionRayBlockSize = 0;
 		int extensionRayGridSize = 0;
-		int shadowRayBlockSize = 0;
-		int shadowRayGridSize = 0;
+		int directLightBlockSize = 0;
+		int directLightGridSize = 0;
 
 		Timer timer;
 		MovingAverage averagePathsPerSecond;

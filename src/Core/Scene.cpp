@@ -1,6 +1,8 @@
 ﻿// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
+#include <cuda/helper_math.h>
+
 #include "Core/Scene.h"
 
 using namespace Varjo;
@@ -26,9 +28,23 @@ void Scene::initialize()
 	ModelLoaderOutput modelOutput = modelLoader.load(modelFileName);
 
 	triangles = modelOutput.triangles;
-	emitters = modelOutput.emitters;
 	materials = modelOutput.materials;
+
+	for (Triangle& triangle : triangles)
+		triangle.initialize();
+
+	if (materials.empty())
+		materials.push_back(Material());
 
 	BVH::build(triangles, nodes);
 	//BVH::exportDot(nodes, "bvh.gv");
+
+	for (uint32_t i = 0; i < triangles.size(); ++i)
+	{
+		if (!isZero(materials[triangles[i].materialIndex].emittance))
+			emitters.push_back(i);
+	}
+
+	if (emitters.empty())
+		emitters.push_back(0);
 }
