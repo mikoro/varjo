@@ -536,12 +536,12 @@ bool ModelLoader::processFace(const char* buffer, uint32_t lineStartIndex, uint3
 			triangle.normals[0] = triangle.normals[1] = triangle.normals[2] = normal;
 		}
 
-		/*if (hasTexcoords)
+		if (hasTexcoords)
 		{
 			triangle.texcoords[0] = texcoords[texcoordIndices[0]];
 			triangle.texcoords[1] = texcoords[texcoordIndices[i - 1]];
 			triangle.texcoords[2] = texcoords[texcoordIndices[i]];
-		}*/
+		}
 
 		output.triangles.push_back(triangle);
 	}

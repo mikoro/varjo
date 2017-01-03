@@ -43,8 +43,8 @@ namespace
 
 	struct BVHSplitOutput
 	{
-		uint32_t index;
-		uint32_t axis;
+		uint32_t index = 0;
+		uint32_t axis = 0;
 		AABB fullAABB;
 		AABB leftAABB;
 		AABB rightAABB;

@@ -3,6 +3,7 @@
 
 #include <GL/gl3w.h>
 #include <cuda_gl_interop.h>
+#include <cstring>
 
 #include "Film.h"
 #include "Utils/GLUtils.h"

@@ -2,6 +2,7 @@
 // License: MIT, see the LICENSE file.
 
 #include <cassert>
+#include <cstring>
 
 #include "Math/Matrix4x4.h"
 #include "Math/Vector3.h"

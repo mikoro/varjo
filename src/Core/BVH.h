@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 #include "Core/AABB.h"
 #include "Core/Triangle.h"
