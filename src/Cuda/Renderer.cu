@@ -542,16 +542,16 @@ void Renderer::initialize(const Scene& scene)
 
 	uint64_t time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	int blockSize, gridSize;
-	CudaUtils::calculateDimensions(static_cast<void*>(initPathsKernel), "initPaths", pathCount, blockSize, gridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(initPathsKernel), "initPaths", pathCount, blockSize, gridSize);
 	initPathsKernel<<<gridSize, blockSize>>>(paths, time, pathCount);
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (initPaths)");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (initPaths)");
 
-	CudaUtils::calculateDimensions(static_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
-	CudaUtils::calculateDimensions(static_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
-	CudaUtils::calculateDimensions(static_cast<void*>(materialKernel), "materialKernel", pathCount, materialBlockSize, materialGridSize);
-	CudaUtils::calculateDimensions(static_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
-	CudaUtils::calculateDimensions(static_cast<void*>(directLightKernel), "directLightKernel", pathCount, directLightBlockSize, directLightGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(materialKernel), "materialKernel", pathCount, materialBlockSize, materialGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(directLightKernel), "directLightKernel", pathCount, directLightBlockSize, directLightGridSize);
 
 	averagePathsPerSecond.setAlpha(0.05f);
 	averageRaysPerSecond.setAlpha(0.05f);
@@ -597,8 +597,8 @@ void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 
 	pixelCount = filmWidth * filmHeight;
 	CudaUtils::checkError(cudaMalloc(&pixels, sizeof(Pixel) * pixelCount), "Could not allocate CUDA device memory");
-	CudaUtils::calculateDimensions(static_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
-	CudaUtils::calculateDimensions(static_cast<void*>(writePixelsKernel), "writePixelsKernel", pixelCount, writePixelsBlockSize, writePixelsGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
+	CudaUtils::calculateDimensions(reinterpret_cast<void*>(writePixelsKernel), "writePixelsKernel", pixelCount, writePixelsBlockSize, writePixelsGridSize);
 
 	clear();
 }

@@ -6,7 +6,7 @@ OBJS := $(subst src/,build/,$(SOURCES:.cpp=.o))
 CU_SOURCES := $(call rwildcard, src/, *.cu)
 CU_OBJS := $(subst src/,build/,$(CU_SOURCES:.cu=.cu.o))
 CXX = /opt/cuda/bin/nvcc
-CFLAGS = -isystem include -Isrc -std=c++11 -Wall -Wextra -Werror -Ofast -x c++
+CFLAGS = -isystem include -Isrc -std=c++11 -Ofast -fopenmp
 CFLAGS := --std c++11 --machine 64 --gpu-architecture=sm_52 --use_fast_math --cudart static -Xcompiler "$(CFLAGS)"
 LDFLAGS = -lstdc++ -ldl -lm -lpthread -lGL -lglfw -lboost_system -lboost_filesystem -lboost_program_options
 TARGET = varjo
