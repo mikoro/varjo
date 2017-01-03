@@ -272,7 +272,7 @@ namespace
 		}
 	}
 
-	__global__ void initPathsKernel(Path* paths, uint64_t seed, uint32_t pathCount)
+	__global__ void initPathsKernel(Paths* paths, uint64_t seed, uint32_t pathCount)
 	{
 		uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -340,7 +340,7 @@ namespace
 
 	// https://mediatech.aalto.fi/~samuli/publications/laine2013hpg_paper.pdf
 	__global__ void logicKernel(
-		Path* __restrict paths,
+		Paths* __restrict paths,
 		Queues* __restrict queues,
 		uint32_t* __restrict emitters,
 		Pixel* __restrict pixels,
@@ -393,7 +393,7 @@ namespace
 	}
 
 	__global__ void newPathKernel(
-		Path* __restrict paths,
+		Paths* __restrict paths,
 		Queues* __restrict queues,
 		const CameraData* __restrict camera,
 		uint32_t filmWidth,
@@ -428,7 +428,7 @@ namespace
 	}
 
 	__global__ void materialKernel(
-		Path* __restrict paths,
+		Paths* __restrict paths,
 		const Queues* __restrict queues,
 		const Material* __restrict materials)
 	{
@@ -446,7 +446,7 @@ namespace
 	}
 
 	__global__ void extensionRayKernel(
-		Path* __restrict paths,
+		Paths* __restrict paths,
 		const Queues* __restrict queues,
 		const BVHNode* __restrict nodes,
 		const Triangle* __restrict triangles)
@@ -465,7 +465,7 @@ namespace
 	}
 
 	__global__ void directLightKernel(
-		Path* __restrict paths,
+		Paths* __restrict paths,
 		const Queues* __restrict queues,
 		const BVHNode* __restrict nodes,
 		const Triangle* __restrict triangles,
@@ -504,44 +504,48 @@ namespace
 
 void Renderer::initialize(const Scene& scene)
 {
-	CudaUtils::checkError(cudaMallocManaged(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&triangles, sizeof(Triangle) * scene.triangles.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&emitters, sizeof(uint32_t) * scene.emitters.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&materials, sizeof(Material) * scene.materials.size()), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths, sizeof(Path)), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->random, sizeof(Random) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->filmSample, sizeof(Sample) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->filmSamplePosition, sizeof(float2) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->throughput, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->color, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->ray, sizeof(Ray) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&paths->intersection, sizeof(Intersection) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->materialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->extensionRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->directLightQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
-
 	CameraData cameraData = scene.camera.getCameraData();
 
-	memcpy(camera, &cameraData, sizeof(CameraData));
-	memcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size());
-	memcpy(triangles, scene.triangles.data(), sizeof(Triangle) * scene.triangles.size());
-	memcpy(emitters, scene.emitters.data(), sizeof(uint32_t) * scene.emitters.size());
-	memcpy(materials, scene.materials.data(), sizeof(Material) * scene.materials.size());
+	pathsHost = new Paths();
+	queuesHost = new Queues();
+	queuesHost->newPathQueueLength = 0;
+	queuesHost->materialQueueLength = 0;
+	queuesHost->extensionRayQueueLength = 0;
+	queuesHost->directLightQueueLength = 0;
+
+	CudaUtils::checkError(cudaMalloc(&camera, sizeof(CameraData)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&nodes, sizeof(BVHNode) * scene.nodes.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&triangles, sizeof(Triangle) * scene.triangles.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&emitters, sizeof(uint32_t) * scene.emitters.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&materials, sizeof(Material) * scene.materials.size()), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&paths, sizeof(Paths)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->random, sizeof(Random) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->filmSample, sizeof(Sample) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->filmSamplePosition, sizeof(float2) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->throughput, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->color, sizeof(float3) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->ray, sizeof(Ray) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pathsHost->intersection, sizeof(Intersection) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&queuesHost->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&queuesHost->materialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&queuesHost->extensionRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&queuesHost->directLightQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+
+	cudaMemcpy(camera, &cameraData, sizeof(CameraData), cudaMemcpyHostToDevice);
+	cudaMemcpy(nodes, scene.nodes.data(), sizeof(BVHNode) * scene.nodes.size(), cudaMemcpyHostToDevice);
+	cudaMemcpy(triangles, scene.triangles.data(), sizeof(Triangle) * scene.triangles.size(), cudaMemcpyHostToDevice);
+	cudaMemcpy(emitters, scene.emitters.data(), sizeof(uint32_t) * scene.emitters.size(), cudaMemcpyHostToDevice);
+	cudaMemcpy(materials, scene.materials.data(), sizeof(Material) * scene.materials.size(), cudaMemcpyHostToDevice);
+	cudaMemcpy(paths, pathsHost, sizeof(Paths), cudaMemcpyHostToDevice);
+	cudaMemcpy(queues, queuesHost, sizeof(Queues), cudaMemcpyHostToDevice);
 
 	uint64_t time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	int blockSize, gridSize;
 	CudaUtils::calculateDimensions(static_cast<void*>(initPathsKernel), "initPaths", pathCount, blockSize, gridSize);
 	initPathsKernel<<<gridSize, blockSize>>>(paths, time, pathCount);
-	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
-
-	queues->newPathQueueLength = 0;
-	queues->materialQueueLength = 0;
-	queues->extensionRayQueueLength = 0;
-	queues->directLightQueueLength = 0;
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (initPaths)");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (initPaths)");
 
 	CudaUtils::calculateDimensions(static_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
@@ -562,25 +566,28 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(triangles), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(emitters), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(materials), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->random), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->filmSample), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->filmSamplePosition), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->throughput), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->color), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->ray), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(paths->intersection), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->random), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->filmSample), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->filmSamplePosition), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->throughput), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->color), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->ray), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(pathsHost->intersection), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->newPathQueue), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->materialQueue), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->extensionRayQueue), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->directLightQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queuesHost->newPathQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queuesHost->materialQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queuesHost->extensionRayQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queuesHost->directLightQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues), "Could not free CUDA device memory");
+
+	delete pathsHost;
+	delete queuesHost;
 }
 
 void Renderer::update(const Scene& scene)
 {
 	CameraData cameraData = scene.camera.getCameraData();
-	memcpy(camera, &cameraData, sizeof(CameraData));
+	cudaMemcpy(camera, &cameraData, sizeof(CameraData), cudaMemcpyHostToDevice);
 }
 
 void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
@@ -589,7 +596,7 @@ void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 		CudaUtils::checkError(cudaFree(pixels), "Could not free CUDA device memory");
 
 	pixelCount = filmWidth * filmHeight;
-	CudaUtils::checkError(cudaMallocManaged(&pixels, sizeof(Pixel) * pixelCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMalloc(&pixels, sizeof(Pixel) * pixelCount), "Could not allocate CUDA device memory");
 	CudaUtils::calculateDimensions(static_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
 	CudaUtils::calculateDimensions(static_cast<void*>(writePixelsKernel), "writePixelsKernel", pixelCount, writePixelsBlockSize, writePixelsGridSize);
 
@@ -599,8 +606,8 @@ void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 void Renderer::clear()
 {
 	clearPixelsKernel<<<clearPixelsGridSize, clearPixelsBlockSize>>>(pixels, pixelCount);
-	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (clearPixels)");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (clearPixels)");
 }
 
 void Renderer::render()
@@ -614,19 +621,23 @@ void Renderer::render()
 
 	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
 	writePixelsKernel<<<writePixelsGridSize, writePixelsBlockSize>>>(pixels, pixelCount, filmSurfaceObject, film.getWidth());
-	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel");
-	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel");
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writePixels)");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writePixels)");
 	film.releaseFilmSurfaceObject();
 
+	cudaMemcpy(queuesHost, queues, sizeof(Queues), cudaMemcpyDeviceToHost);
+
 	float elapsedSeconds = timer.getElapsedSeconds();
-	averagePathsPerSecond.addMeasurement(float(queues->newPathQueueLength) / elapsedSeconds);
-	averageRaysPerSecond.addMeasurement(float(queues->extensionRayQueueLength + queues->directLightQueueLength) / elapsedSeconds);
+	averagePathsPerSecond.addMeasurement(float(queuesHost->newPathQueueLength) / elapsedSeconds);
+	averageRaysPerSecond.addMeasurement(float(queuesHost->extensionRayQueueLength + queuesHost->directLightQueueLength) / elapsedSeconds);
 	timer.restart();
 
-	queues->newPathQueueLength = 0;
-	queues->materialQueueLength = 0;
-	queues->extensionRayQueueLength = 0;
-	queues->directLightQueueLength = 0;
+	queuesHost->newPathQueueLength = 0;
+	queuesHost->materialQueueLength = 0;
+	queuesHost->extensionRayQueueLength = 0;
+	queuesHost->directLightQueueLength = 0;
+
+	cudaMemcpy(queues, queuesHost, sizeof(Queues), cudaMemcpyHostToDevice);
 }
 
 float Renderer::getPathsPerSecond() const

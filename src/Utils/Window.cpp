@@ -9,6 +9,7 @@
 #include "Utils/Log.h"
 #include "Utils/Settings.h"
 #include "Utils/App.h"
+#include "Cuda/CudaUtils.h"
 
 using namespace Varjo;
 
@@ -80,6 +81,8 @@ void Window::run()
 
 	if (settings.window.hideCursor)
 		glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	CudaUtils::initCuda();
 
 	scene = Scene::createTestScene1();
 	scene.initialize();

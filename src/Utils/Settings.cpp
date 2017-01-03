@@ -20,7 +20,6 @@ bool Settings::load(int argc, char** argv)
 
 		("help", "")
 
-		("general.cudaDeviceNumber", po::value(&general.cudaDeviceNumber)->default_value(0), "")
 		("general.checkGLErrors", po::value(&general.checkGLErrors)->default_value(true), "")
 		("general.filmScale", po::value(&general.filmScale)->default_value(0.5f), "")
 		("general.infoPanelState", po::value(&general.infoPanelState)->default_value(2), "")

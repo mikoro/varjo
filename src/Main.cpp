@@ -3,7 +3,6 @@
 
 #include "Utils/App.h"
 #include "Utils/Log.h"
-#include "Cuda/CudaUtils.h"
 
 using namespace Varjo;
 
@@ -14,7 +13,6 @@ int run(int argc, char** argv)
 		if (!App::getSettings().load(argc, argv))
 			return -1;
 
-		CudaUtils::initCuda();
 		App::getWindow().run();
 	}
 	catch (...)

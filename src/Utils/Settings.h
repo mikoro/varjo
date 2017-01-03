@@ -13,7 +13,6 @@ namespace Varjo
 
 		struct General
 		{
-			uint32_t cudaDeviceNumber;
 			bool checkGLErrors;
 			float filmScale;
 			uint32_t infoPanelState;

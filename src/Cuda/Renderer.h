@@ -29,7 +29,7 @@ namespace Varjo
 		uint32_t permutation;
 	};
 
-	struct Path
+	struct Paths
 	{
 		Random* random;
 		Sample* filmSample;
@@ -38,9 +38,6 @@ namespace Varjo
 		float3* color;
 		Ray* ray;
 		Intersection* intersection;
-		uint32_t* length;
-		uint32_t* emitterIndex;
-		float3* emitterPosition;
 	};
 
 	struct Queues
@@ -84,8 +81,10 @@ namespace Varjo
 		Triangle* triangles = nullptr;
 		uint32_t* emitters = nullptr;
 		Material* materials = nullptr;
-		Path* paths = nullptr;
+		Paths* paths = nullptr;
+		Paths* pathsHost = nullptr;
 		Queues* queues = nullptr;
+		Queues* queuesHost = nullptr;
 		Pixel* pixels = nullptr;
 		
 		uint32_t emitterCount = 0;

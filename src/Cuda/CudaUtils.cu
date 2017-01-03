@@ -1,21 +1,20 @@
 // Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
-#include <cuda_runtime_api.h>
-#include <device_launch_parameters.h>
-
 #include "tinyformat/tinyformat.h"
 
 #include "Cuda/CudaUtils.h"
 #include "Utils/App.h"
 #include "Utils/StringUtils.h"
 
+#include <cuda_gl_interop.h>
+
 using namespace Varjo;
 
 void CudaUtils::checkError(cudaError_t code, const std::string& message)
 {
 	if (code != cudaSuccess)
-		throw std::runtime_error(tfm::format("Cuda error: %s: %s", message, cudaGetErrorString(code)));
+		throw std::runtime_error(tfm::format("CUDA error: %s: %s", message, cudaGetErrorString(code)));
 }
 
 void CudaUtils::initCuda()
@@ -23,16 +22,7 @@ void CudaUtils::initCuda()
 	Log& log = App::getLog();
 	Settings& settings = App::getSettings();
 
-	checkError(cudaSetDevice(settings.general.cudaDeviceNumber), "Could not set CUDA device");
-
-	int deviceNumber;
-	checkError(cudaGetDevice(&deviceNumber), "Could not get CUDA device number");
-
-	int deviceCount;
-	checkError(cudaGetDeviceCount(&deviceCount), "Could not get CUDA device count");
-
-	cudaDeviceProp deviceProp;
-	checkError(cudaGetDeviceProperties(&deviceProp, settings.general.cudaDeviceNumber), "Could not get CUDA device properties");
+	log.logInfo("Initializing CUDA");
 
 	int runtimeVersion;
 	checkError(cudaRuntimeGetVersion(&runtimeVersion), "Could not get CUDA runtime version");
@@ -41,7 +31,27 @@ void CudaUtils::initCuda()
 	checkError(cudaDriverGetVersion(&driverVersion), "Could not get CUDA driver version");
 
 	log.logInfo("CUDA Runtime version: %d | Driver version: %d", runtimeVersion, driverVersion);
-	log.logInfo("CUDA device: %s (device number: %d, device count: %d)", deviceProp.name, deviceNumber, deviceCount);
+
+	int deviceCount = 0;
+	checkError(cudaGetDeviceCount(&deviceCount), "Could not get CUDA device count");
+
+	unsigned int glDeviceCount = 4;
+	int glDevices[4];
+	checkError(cudaGLGetDevices(&glDeviceCount, glDevices, glDeviceCount, cudaGLDeviceListAll), "Could not get CUDA devices for current OpenGL context");
+
+	log.logInfo("CUDA device count: %d | For current OpenGL context: %d", deviceCount, glDeviceCount);
+
+	if (glDeviceCount < 1)
+		throw std::runtime_error("Could not find any CUDA devices for current OpenGL context");
+
+	int deviceNumber = glDevices[0];
+
+	checkError(cudaSetDevice(deviceNumber), "Could not set CUDA device");
+
+	cudaDeviceProp deviceProp;
+	checkError(cudaGetDeviceProperties(&deviceProp, deviceNumber), "Could not get CUDA device properties");
+
+	log.logInfo("CUDA selected device: %d | Name: %s | PCI domain/bus/device: %d/%d/%d", deviceNumber, deviceProp.name, deviceProp.pciDomainID, deviceProp.pciBusID, deviceProp.pciDeviceID);
 	log.logInfo("CUDA Compute capability: %d.%d | Total memory: %s", deviceProp.major, deviceProp.minor, StringUtils::humanizeNumber(double(deviceProp.totalGlobalMem), true));
 }
 
