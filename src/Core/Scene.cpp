@@ -14,7 +14,7 @@ Scene Scene::createTestScene1()
 	scene.camera.orientation = EulerAngle(-18.3100f, 29.0997f, 0.0000f);
 	scene.camera.fov = 75.00f;
 
-	scene.modelFileName = "data\\models\\cornellbox\\cornellbox.obj";
+	scene.modelFileName = "data/models/cornellbox/cornellbox.obj";
 
 	return scene;
 }

@@ -21,7 +21,7 @@ varjo: $(OBJS) $(CU_OBJS)
 	@mkdir -p bin
 	@echo "Linking $@"
 	@$(CXX) $(OBJS) $(CU_OBJS) $(CFLAGS) $(LDFLAGS) -o bin/$(TARGET)
-	@platform/linux/post-build.sh
+	@sh platform/linux/post-build.sh
 
 build/%.o: src/%.cpp
 	@mkdir -p $(@D)
