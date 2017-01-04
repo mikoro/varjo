@@ -184,7 +184,7 @@ void Camera::update(float timeStep)
 
 	// MISC
 
-	fov = MAX(1.0f, MIN(fov, 180.0f));
+	fov = std::max(1.0f, std::min(fov, 180.0f));
 	float filmDistance = (filmWidth / 2.0f) / std::tan(MathUtils::degToRad(fov / 2.0f));
 	filmCenter = position + (forward * filmDistance);
 }

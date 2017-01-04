@@ -175,8 +175,8 @@ void InfoPanel::renderFull(const Scene& scene, const Renderer& renderer)
 	nvgText(context, currentX, currentY, tfm::format("Film: %dx%d (%.2fx) (%s)", film.getWidth(), film.getHeight(), settings.general.filmScale, StringUtils::humanizeNumber(totalPixels)).c_str(), nullptr);
 	currentY += lineSpacing;
 
-	int32_t filmMouseX = MAX(int32_t(0), MIN(window.getMouseInfo().filmX, int32_t(film.getWidth() - 1)));
-	int32_t filmMouseY = MAX(int32_t(0), MIN(window.getMouseInfo().filmY, int32_t(film.getHeight() - 1)));;
+	int32_t filmMouseX = std::max(int32_t(0), std::min(window.getMouseInfo().filmX, int32_t(film.getWidth() - 1)));
+	int32_t filmMouseY = std::max(int32_t(0), std::min(window.getMouseInfo().filmY, int32_t(film.getHeight() - 1)));;
 	int32_t filmMouseIndex = filmMouseY * film.getWidth() + filmMouseX;
 
 	nvgText(context, currentX, currentY, tfm::format("Mouse: (%d, %d, %d)", filmMouseX, filmMouseY, filmMouseIndex).c_str(), nullptr);

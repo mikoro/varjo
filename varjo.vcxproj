@@ -130,6 +130,7 @@
     <ClCompile Include="src\Math\Vector3.cpp" />
     <ClCompile Include="src\Math\Vector4.cpp" />
     <ClCompile Include="src\Utils\App.cpp" />
+    <ClCompile Include="src\Utils\CudaUtils.cpp" />
     <ClCompile Include="src\Utils\InfoPanel.cpp" />
     <ClCompile Include="src\Utils\ModelLoader.cpp" />
     <ClCompile Include="src\Utils\Window.cpp" />
@@ -147,13 +148,19 @@
     <ClInclude Include="src\Core\AABB.h" />
     <ClInclude Include="src\Core\BVH.h" />
     <ClInclude Include="src\Core\Camera.h" />
-    <ClInclude Include="src\Core\Intersection.h" />
     <ClInclude Include="src\Core\Material.h" />
-    <ClInclude Include="src\Core\Ray.h" />
     <ClInclude Include="src\Core\Scene.h" />
     <ClInclude Include="src\Core\Triangle.h" />
-    <ClInclude Include="src\Cuda\CudaUtils.h" />
+    <ClInclude Include="src\Cuda\Camera.h" />
+    <ClInclude Include="src\Cuda\Filtering.h" />
+    <ClInclude Include="src\Cuda\Intersect.h" />
+    <ClInclude Include="src\Cuda\Kernels.h" />
+    <ClInclude Include="src\Cuda\Misc.h" />
+    <ClInclude Include="src\Cuda\Math.h" />
+    <ClInclude Include="src\Cuda\Random.h" />
     <ClInclude Include="src\Cuda\Renderer.h" />
+    <ClInclude Include="src\Cuda\Sampling.h" />
+    <ClInclude Include="src\Cuda\Structs.h" />
     <ClInclude Include="src\Math\EulerAngle.h" />
     <ClInclude Include="src\Math\MathUtils.h" />
     <ClInclude Include="src\Math\Matrix4x4.h" />
@@ -162,6 +169,7 @@
     <ClInclude Include="src\Math\Vector3.h" />
     <ClInclude Include="src\Math\Vector4.h" />
     <ClInclude Include="src\Utils\App.h" />
+    <ClInclude Include="src\Utils\CudaUtils.h" />
     <ClInclude Include="src\Utils\InfoPanel.h" />
     <ClInclude Include="src\Utils\ModelLoader.h" />
     <ClInclude Include="src\Utils\Window.h" />
@@ -178,11 +186,9 @@
     <ResourceCompile Include="platform\windows\varjo.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="nsight1.nvact" />
     <None Include="src\Utils\Log.inl" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\Cuda\CudaUtils.cu" />
     <CudaCompile Include="src\Cuda\Renderer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

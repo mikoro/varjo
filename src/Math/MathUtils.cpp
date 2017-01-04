@@ -13,12 +13,12 @@ bool MathUtils::almostZero(float value, float threshold)
 // https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 bool MathUtils::almostSame(float first, float second, float threshold)
 {
-	float difference = std::abs(first - second);
+	float difference = fabsf(first - second);
 
 	if (difference < threshold)
 		return true;
 
-	float larger = MAX(std::abs(first), std::abs(second));
+	float larger = fmaxf(fabsf(first), fabsf(second));
 
 	if (difference < (larger * threshold))
 		return true;

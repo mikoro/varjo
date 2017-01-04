@@ -48,7 +48,7 @@ typedef unsigned short ushort;
 // {
 //     return a > b ? a : b;
 // }
-// 
+
 inline int max(int a, int b)
 {
     return a > b ? a : b;
@@ -63,6 +63,7 @@ inline float rsqrtf(float x)
 {
     return 1.0f / sqrtf(x);
 }
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

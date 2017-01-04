@@ -25,6 +25,6 @@ namespace Varjo
 	public:
 
 		static void build(std::vector<Triangle>& triangles, std::vector<BVHNode>& nodes);
-		static void exportDot(std::vector<BVHNode>& nodes, const std::string& fileName);
+		static void exportDot(const std::vector<BVHNode>& nodes, const std::string& fileName);
 	};
 }

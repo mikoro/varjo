@@ -7,7 +7,7 @@
 
 #include "Film.h"
 #include "Utils/GLUtils.h"
-#include "Cuda/CudaUtils.h"
+#include "Utils/CudaUtils.h"
 #include "Utils/App.h"
 
 using namespace Varjo;

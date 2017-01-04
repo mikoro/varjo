@@ -103,6 +103,9 @@
     <ClCompile Include="src\Utils\ModelLoader.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utils\CudaUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\FpsCounter.h">
@@ -175,9 +178,6 @@
     <ClInclude Include="src\Cuda\Renderer.h">
       <Filter>Cuda</Filter>
     </ClInclude>
-    <ClInclude Include="src\Cuda\CudaUtils.h">
-      <Filter>Cuda</Filter>
-    </ClInclude>
     <ClInclude Include="src\Core\Material.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -187,18 +187,41 @@
     <ClInclude Include="src\Utils\ModelLoader.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Intersection.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Cuda\Math.h">
+      <Filter>Cuda</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Ray.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Utils\CudaUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Random.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Sampling.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Misc.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Filtering.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Intersect.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Kernels.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Camera.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cuda\Structs.h">
+      <Filter>Cuda</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Utils\Log.inl">
       <Filter>Utils</Filter>
     </None>
-    <None Include="nsight1.nvact" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="platform\windows\varjo.rc">
@@ -207,9 +230,6 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\Cuda\Renderer.cu">
-      <Filter>Cuda</Filter>
-    </CudaCompile>
-    <CudaCompile Include="src\Cuda\CudaUtils.cu">
       <Filter>Cuda</Filter>
     </CudaCompile>
   </ItemGroup>

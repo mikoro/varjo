@@ -3,12 +3,11 @@
 
 #include <boost/filesystem.hpp>
 
-#include <cuda/helper_math.h>
-
 #include "Utils/ModelLoader.h"
 #include "Utils/App.h"
 #include "Utils/Log.h"
 #include "Utils/Timer.h"
+#include "Cuda/Math.h"
 
 using namespace Varjo;
 namespace bf = boost::filesystem;

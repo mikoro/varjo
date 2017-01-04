@@ -3,62 +3,17 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include "Core/Scene.h"
 #include "Core/Camera.h"
 #include "Core/BVH.h"
 #include "Core/Triangle.h"
 #include "Core/Material.h"
-#include "Core/Ray.h"
-#include "Core/Intersection.h"
+#include "Cuda/Structs.h"
 #include "Utils/Timer.h"
 #include "Math/MovingAverage.h"
 
 namespace Varjo
 {
-	struct Random
-	{
-		uint64_t state;
-		uint64_t inc;
-	};
-
-	struct Sample
-	{
-		uint32_t index;
-		uint32_t permutation;
-	};
-
-	struct Paths
-	{
-		Random* random;
-		Sample* filmSample;
-		float2* filmSamplePosition;
-		float3* throughput;
-		float3* color;
-		Ray* ray;
-		Intersection* intersection;
-	};
-
-	struct Queues
-	{
-		uint32_t* newPathQueue;
-		uint32_t* materialQueue;
-		uint32_t* extensionRayQueue;
-		uint32_t* directLightQueue;
-
-		uint32_t newPathQueueLength;
-		uint32_t materialQueueLength;
-		uint32_t extensionRayQueueLength;
-		uint32_t directLightQueueLength;
-	};
-
-	struct Pixel
-	{
-		float3 color;
-		float weight;
-	};
-
 	class Renderer
 	{
 	public:
@@ -82,9 +37,7 @@ namespace Varjo
 		uint32_t* emitters = nullptr;
 		Material* materials = nullptr;
 		Paths* paths = nullptr;
-		Paths* pathsHost = nullptr;
 		Queues* queues = nullptr;
-		Queues* queuesHost = nullptr;
 		Pixel* pixels = nullptr;
 		
 		uint32_t emitterCount = 0;

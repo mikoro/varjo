@@ -1,11 +1,11 @@
 ﻿// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
+#include <algorithm>
 #include <cfloat>
 
-#include <cuda/helper_math.h>
-
 #include "Core/AABB.h"
+#include "Cuda/Math.h"
 #include "Common.h"
 
 using namespace Varjo;
@@ -34,15 +34,15 @@ AABB AABB::createFromVertices(const float3& v0, const float3& v1, const float3& 
 {
 	float3 min_;
 
-	min_.x = MIN(v0.x, MIN(v1.x, v2.x));
-	min_.y = MIN(v0.y, MIN(v1.y, v2.y));
-	min_.z = MIN(v0.z, MIN(v1.z, v2.z));
+	min_.x = std::min(v0.x, std::min(v1.x, v2.x));
+	min_.y = std::min(v0.y, std::min(v1.y, v2.y));
+	min_.z = std::min(v0.z, std::min(v1.z, v2.z));
 
 	float3 max_;
 
-	max_.x = MAX(v0.x, MAX(v1.x, v2.x));
-	max_.y = MAX(v0.y, MAX(v1.y, v2.y));
-	max_.z = MAX(v0.z, MAX(v1.z, v2.z));
+	max_.x = std::max(v0.x, std::max(v1.x, v2.x));
+	max_.y = std::max(v0.y, std::max(v1.y, v2.y));
+	max_.z = std::max(v0.z, std::max(v1.z, v2.z));
 
 	return AABB::createFromMinMax(min_, max_);
 }

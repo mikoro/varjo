@@ -3,13 +3,15 @@
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
+#include <cuda_gl_interop.h>
 
 #include "Utils/Window.h"
 #include "Utils/GLUtils.h"
 #include "Utils/Log.h"
 #include "Utils/Settings.h"
 #include "Utils/App.h"
-#include "Cuda/CudaUtils.h"
+#include "Utils/CudaUtils.h"
+#include "Utils/StringUtils.h"
 
 using namespace Varjo;
 
@@ -82,7 +84,37 @@ void Window::run()
 	if (settings.window.hideCursor)
 		glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	CudaUtils::initCuda();
+	log.logInfo("Initializing CUDA");
+
+	int runtimeVersion;
+	CudaUtils::checkError(cudaRuntimeGetVersion(&runtimeVersion), "Could not get CUDA runtime version");
+
+	int driverVersion;
+	CudaUtils::checkError(cudaDriverGetVersion(&driverVersion), "Could not get CUDA driver version");
+
+	log.logInfo("CUDA Runtime version: %d | Driver version: %d", runtimeVersion, driverVersion);
+
+	int deviceCount = 0;
+	CudaUtils::checkError(cudaGetDeviceCount(&deviceCount), "Could not get CUDA device count");
+
+	unsigned int glDeviceCount = 4;
+	int glDevices[4];
+	CudaUtils::checkError(cudaGLGetDevices(&glDeviceCount, glDevices, glDeviceCount, cudaGLDeviceListAll), "Could not get CUDA devices for current OpenGL context");
+
+	log.logInfo("CUDA device count: %d | For current OpenGL context: %d", deviceCount, glDeviceCount);
+
+	if (glDeviceCount < 1)
+		throw std::runtime_error("Could not find any CUDA devices for current OpenGL context");
+
+	int deviceNumber = glDevices[0];
+
+	CudaUtils::checkError(cudaSetDevice(deviceNumber), "Could not set CUDA device");
+
+	cudaDeviceProp deviceProp;
+	CudaUtils::checkError(cudaGetDeviceProperties(&deviceProp, deviceNumber), "Could not get CUDA device properties");
+
+	log.logInfo("CUDA selected device: %d | Name: %s | PCI domain/bus/device: %d/%d/%d", deviceNumber, deviceProp.name, deviceProp.pciDomainID, deviceProp.pciBusID, deviceProp.pciDeviceID);
+	log.logInfo("CUDA Compute capability: %d.%d | Total memory: %s", deviceProp.major, deviceProp.minor, StringUtils::humanizeNumber(double(deviceProp.totalGlobalMem), true));
 
 	scene = Scene::createTestScene1();
 	scene.initialize();
@@ -348,8 +380,8 @@ void Window::resizeFilm()
 	uint32_t filmWidth = uint32_t(float(windowWidth) * settings.general.filmScale + 0.5);
 	uint32_t filmHeight = uint32_t(float(windowHeight) * settings.general.filmScale + 0.5);
 
-	filmWidth = MAX(uint32_t(1), filmWidth);
-	filmHeight = MAX(uint32_t(1), filmHeight);
+	filmWidth = std::max(uint32_t(1), filmWidth);
+	filmHeight = std::max(uint32_t(1), filmHeight);
 
 	film.resize(filmWidth, filmHeight);
 	scene.camera.setFilmSize(filmWidth, filmHeight);

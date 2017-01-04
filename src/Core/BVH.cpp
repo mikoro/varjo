@@ -236,7 +236,7 @@ void BVH::build(std::vector<Triangle>& triangles, std::vector<BVHNode>& nodes)
 	log.logInfo("BVH building finished (time: %s, nodes: %d, leafs: %d, triangles/leaf: %.2f +- %.2f)", timer.getElapsed().getString(true), nodeCount, leafTriangleCounts.size(), mean, std);
 }
 
-void BVH::exportDot(std::vector<BVHNode>& nodes, const std::string& fileName)
+void BVH::exportDot(const std::vector<BVHNode>& nodes, const std::string& fileName)
 {
 	App::getLog().logInfo("Exporting BVH structure to %s", fileName);
 

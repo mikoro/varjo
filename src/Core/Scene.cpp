@@ -1,9 +1,8 @@
 ﻿// Copyright © 2016 Mikko Ronkainen <firstname@mikkoronkainen.com>
 // License: MIT, see the LICENSE file.
 
-#include <cuda/helper_math.h>
-
 #include "Core/Scene.h"
+#include "Cuda/Math.h"
 
 using namespace Varjo;
 
