@@ -51,9 +51,12 @@ namespace Varjo
 		Sample* filmSample;
 		float2* filmSamplePosition;
 		float3* throughput;
-		float3* color;
-		Ray* ray;
+		float3* result;
+		Ray* extensionRay;
+		Ray* shadowRay;
 		Intersection* intersection;
+		bool* shadowRayBlocked;
+		uint32_t* length;
 	};
 
 	// wavefront queues
@@ -62,12 +65,12 @@ namespace Varjo
 		uint32_t* newPathQueue;
 		uint32_t* materialQueue;
 		uint32_t* extensionRayQueue;
-		uint32_t* directLightQueue;
+		uint32_t* shadowRayQueue;
 
 		uint32_t newPathQueueLength;
 		uint32_t materialQueueLength;
 		uint32_t extensionRayQueueLength;
-		uint32_t directLightQueueLength;
+		uint32_t shadowRayQueueLength;
 	};
 
 	// store film data in pixels

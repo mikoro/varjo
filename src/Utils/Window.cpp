@@ -97,6 +97,12 @@ void Window::run()
 	int deviceCount = 0;
 	CudaUtils::checkError(cudaGetDeviceCount(&deviceCount), "Could not get CUDA device count");
 
+	// this is a little hack to prevent launching the program when multiple CUDA devices are active
+	// the reason is that CUDA Unified Memory + MultiGPU + Windows -> memory will not be allocated on device -> everything breaks
+	// https://docs.nvidia.com/cuda/cuda-c-programming-guide/#um-multi-gpu
+	if (deviceCount > 1)
+		throw std::runtime_error("More than one CUDA devices found, please select only one with CUDA_VISIBLE_DEVICES environment variable");
+
 	unsigned int glDeviceCount = 4;
 	int glDevices[4];
 	CudaUtils::checkError(cudaGLGetDevices(&glDeviceCount, glDevices, glDeviceCount, cudaGLDeviceListAll), "Could not get CUDA devices for current OpenGL context");
