@@ -65,28 +65,7 @@ __device__ inline float2 getFilmSample(uint32_t s, uint32_t m, uint32_t n, uint3
 	return r;
 }
 
-__device__ inline float3 getCosineSample(Random& random, const float3& normal)
-{
-	float u1 = randomFloat(random);
-	float u2 = randomFloat(random);
-	float r = sqrtf(u1);
-	float theta = 2.0f * float(M_PI) * u2;
-	float x = r * cosf(theta);
-	float y = r * sinf(theta);
-	float z = sqrtf(fmaxf(0.0f, 1.0f - u1));
-
-	float3 u = normalize(cross(normal, make_float3(0.0001f, 1.0000f, 0.0001f)));
-	float3 v = normalize(cross(u, normal));
-
-	return x * u + y * v + z * normal;
-}
-
-__device__ inline float getCosinePdf(const float3& normal, const float3& direction)
-{
-	return dot(normal, direction) / float(M_PI);
-}
-
-__device__ inline float3 getTriangleSample(Random& random, const Triangle& triangle)
+__device__ inline Intersection getTriangleSample(Random& random, const Triangle& triangle)
 {
 	float r1 = randomFloat(random);
 	float r2 = randomFloat(random);
@@ -96,5 +75,15 @@ __device__ inline float3 getTriangleSample(Random& random, const Triangle& trian
 	float v = r2 * sr1;
 	float w = 1.0f - u - v;
 
-	return u * triangle.vertices[0] + v * triangle.vertices[1] + w * triangle.vertices[2];
+	Intersection intersection;
+
+	intersection.position = u * triangle.vertices[0] + v * triangle.vertices[1] + w * triangle.vertices[2];
+	intersection.normal = u * triangle.normals[0] + v * triangle.normals[1] + w * triangle.normals[2];
+	intersection.texcoord = u * triangle.texcoords[0] + v * triangle.texcoords[1] + w * triangle.texcoords[2];
+	intersection.distance = FLT_MAX;
+	intersection.triangleIndex = 0;
+	intersection.materialIndex = triangle.materialIndex;
+	intersection.wasFound = true;
+
+	return intersection;
 }

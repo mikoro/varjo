@@ -55,8 +55,8 @@ namespace Varjo
 		int materialGridSize = 0;
 		int extensionRayBlockSize = 0;
 		int extensionRayGridSize = 0;
-		int directLightBlockSize = 0;
-		int directLightGridSize = 0;
+		int lightRayBlockSize = 0;
+		int lightRayGridSize = 0;
 
 		Timer timer;
 		MovingAverage averagePathsPerSecond;

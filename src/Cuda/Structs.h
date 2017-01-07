@@ -52,11 +52,19 @@ namespace Varjo
 		float2* filmSamplePosition;
 		float3* throughput;
 		float3* result;
-		Ray* extensionRay;
-		Ray* shadowRay;
-		Intersection* intersection;
-		bool* shadowRayBlocked;
 		uint32_t* length;
+		Ray* extensionRay;
+		Intersection* extensionIntersection;
+		float3* extensionBrdf;
+		float* extensionBrdfPdf;
+		float* extensionCosine;
+		Ray* lightRay;
+		Intersection* lightIntersection;
+		float3* lightEmittance;
+		float3* lightBrdf;
+		float* lightBrdfPdf;
+		float* lightPdf;
+		float* lightCosine;
 	};
 
 	// wavefront queues
@@ -65,12 +73,12 @@ namespace Varjo
 		uint32_t* newPathQueue;
 		uint32_t* materialQueue;
 		uint32_t* extensionRayQueue;
-		uint32_t* shadowRayQueue;
+		uint32_t* lightRayQueue;
 
 		uint32_t newPathQueueLength;
 		uint32_t materialQueueLength;
 		uint32_t extensionRayQueueLength;
-		uint32_t shadowRayQueueLength;
+		uint32_t lightRayQueueLength;
 	};
 
 	// store film data in pixels

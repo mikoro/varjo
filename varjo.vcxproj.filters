@@ -217,6 +217,9 @@
     <ClInclude Include="src\Cuda\Structs.h">
       <Filter>Cuda</Filter>
     </ClInclude>
+    <ClInclude Include="src\Cuda\Material.h">
+      <Filter>Cuda</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Utils\Log.inl">

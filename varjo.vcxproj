@@ -155,6 +155,7 @@
     <ClInclude Include="src\Cuda\Filtering.h" />
     <ClInclude Include="src\Cuda\Intersect.h" />
     <ClInclude Include="src\Cuda\Kernels.h" />
+    <ClInclude Include="src\Cuda\Material.h" />
     <ClInclude Include="src\Cuda\Misc.h" />
     <ClInclude Include="src\Cuda\Math.h" />
     <ClInclude Include="src\Cuda\Random.h" />

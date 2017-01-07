@@ -14,6 +14,7 @@
 #include "Cuda/Sampling.h"
 #include "Cuda/Camera.h"
 #include "Cuda/Intersect.h"
+#include "Cuda/Material.h"
 
 using namespace Varjo;
 
@@ -33,11 +34,19 @@ __global__ void initPathsKernel(Paths* paths, uint64_t seed, uint32_t pathCount)
 	paths->filmSamplePosition[id] = make_float2(0.0f, 0.0f);
 	paths->throughput[id] = make_float3(0.0f, 0.0f, 0.0f);
 	paths->result[id] = make_float3(0.0f, 0.0f, 0.0f);
-	paths->extensionRay[id] = Ray();
-	paths->shadowRay[id] = Ray();
-	paths->intersection[id] = Intersection();
-	paths->shadowRayBlocked[id] = true;
 	paths->length[id] = 0;
+	paths->extensionRay[id] = Ray();
+	paths->extensionIntersection[id] = Intersection();
+	paths->extensionBrdf[id] = make_float3(0.0f, 0.0f, 0.0f);
+	paths->extensionBrdfPdf[id] = 0.0f;
+	paths->extensionCosine[id] = 0.0f;
+	paths->lightRay[id] = Ray();
+	paths->lightIntersection[id] = Intersection();
+	paths->lightEmittance[id] = make_float3(0.0f, 0.0f, 0.0f);
+	paths->lightBrdf[id] = make_float3(0.0f, 0.0f, 0.0f);
+	paths->lightBrdfPdf[id] = 0.0f;
+	paths->lightPdf[id] = 0.0f;
+	paths->lightCosine[id] = 0.0f;
 }
 
 __global__ void clearPixelsKernel(Pixel* pixels, uint32_t pixelCount)
@@ -67,7 +76,7 @@ __global__ void writePixelsKernel(Pixel* pixels, uint32_t pixelCount, cudaSurfac
 	if (weight != 0.0f)
 		color = pixels[id].color / weight;
 
-	// simple tonemapping for the pixel color value
+	// simple tonemapping
 	const float invGamma = 1.0f / 2.2f;
 	color = clamp(color, 0.0f, 1.0f);
 	color.x = powf(color.x, invGamma);
@@ -94,16 +103,35 @@ __global__ void logicKernel(
 	if (id >= pathCount)
 		return;
 
-	// russian roulette
 	bool terminate = false;
+	float continueProb = 1.0f;
+
+	// russian roulette
 	if (paths->length[id] > 2)
 	{
-		const float continueProb = 0.8f;
+		continueProb = 0.8f;
 		terminate = randomFloat(paths->random[id]) > continueProb;
-		paths->throughput[id] /= continueProb;
 	}
 
-	if (terminate || !paths->intersection[id].wasFound || isZero(paths->throughput[id])) // path is terminated
+	// terminate too long paths
+	if (paths->length[id] > 8)
+		terminate = true;
+
+	// skip these for the first part of the path
+	if (paths->length[id] > 0)
+	{
+		// add direct light
+		if (!paths->lightIntersection[id].wasFound)
+			paths->result[id] += paths->throughput[id] * paths->lightEmittance[id] * paths->lightBrdf[id] * (paths->lightCosine[id] / paths->lightPdf[id]);
+
+		// update path throughput
+		paths->throughput[id] *= paths->extensionBrdf[id] * (paths->extensionCosine[id] / paths->extensionBrdfPdf[id] / continueProb);
+	}
+
+	paths->length[id]++;
+
+	// terminate path
+	if (terminate || !paths->extensionIntersection[id].wasFound)
 	{
 		int ox = int(paths->filmSamplePosition[id].x);
 		int oy = int(paths->filmSamplePosition[id].y);
@@ -136,22 +164,23 @@ __global__ void logicKernel(
 	}
 	else // path continues
 	{
-		// select random emitter triangle and generate shadow ray
-		uint32_t emitterIndex = randomInt(paths->random[id], emitterCount);
-		const Triangle& emitter = triangles[emitters[emitterIndex]];
-		float3 emitterPosition = getTriangleSample(paths->random[id], emitter);
-		float3 toEmitter = emitterPosition - paths->intersection[id].position;
-		float3 toEmitterDir = normalize(toEmitter);
-		float toEmitterDist = length(toEmitter);
-
-		Ray shadowRay;
-		shadowRay.origin = paths->intersection[id].position;
-		shadowRay.direction = toEmitterDir;
-		shadowRay.minDistance = RAY_EPSILON;
-		shadowRay.maxDistance = toEmitterDist - RAY_EPSILON;
-		initRay(shadowRay);
-
-		paths->shadowRay[id] = shadowRay;
+		// select random emitter triangle and generate light ray
+		Ray lightRay;
+		uint32_t triangleId = emitters[randomInt(paths->random[id], emitterCount)];
+		const Triangle& triangle = triangles[triangleId];
+		Intersection triangleIntersection = getTriangleSample(paths->random[id], triangle);
+		float3 toTriangle = triangleIntersection.position - paths->extensionIntersection[id].position;
+		float3 toTriangleDir = normalize(toTriangle);
+		float toTriangleDist = length(toTriangle);
+		lightRay.origin = paths->extensionIntersection[id].position;
+		lightRay.direction = toTriangleDir;
+		lightRay.minDistance = RAY_EPSILON;
+		lightRay.maxDistance = toTriangleDist - RAY_EPSILON;
+		initRay(lightRay);
+		triangleIntersection.triangleIndex = triangleId;
+		triangleIntersection.distance = toTriangleDist;
+		paths->lightRay[id] = lightRay;
+		paths->lightIntersection[id] = triangleIntersection;
 
 		// add path to material queue
 		uint32_t queueIndex = atomicAggInc(&queues->materialQueueLength);
@@ -174,25 +203,18 @@ __global__ void newPathKernel(
 
 	id = queues->newPathQueue[id];
 
-	uint32_t filmSampleIndex = paths->filmSample[id].index;
-	uint32_t filmSamplePermutation = paths->filmSample[id].permutation;
-
 	// rotate sampling index and permutation
-	if (filmSampleIndex >= filmLength)
+	if (paths->filmSample[id].index >= filmLength)
 	{
-		filmSampleIndex = 0;
-		paths->filmSample[id].permutation = ++filmSamplePermutation;
+		paths->filmSample[id].index = 0;
+		paths->filmSample[id].permutation++;
 	}
 
-	float2 filmSamplePosition = getFilmSample(filmSampleIndex++, filmWidth, filmHeight, filmSamplePermutation);
-	paths->filmSample[id].index = filmSampleIndex;
+	float2 filmSamplePosition = getFilmSample(paths->filmSample[id].index++, filmWidth, filmHeight, paths->filmSample[id].permutation);
 	paths->filmSamplePosition[id] = filmSamplePosition;
 	paths->throughput[id] = make_float3(1.0f, 1.0f, 1.0f);
 	paths->result[id] = make_float3(0.0f, 0.0f, 0.0f);
 	paths->extensionRay[id] = getCameraRay(*camera, filmSamplePosition);
-	paths->shadowRay[id] = Ray();
-	paths->intersection[id] = Intersection();
-	paths->shadowRayBlocked[id] = true;
 	paths->length[id] = 0;
 
 	uint32_t queueIndex = atomicAggInc(&queues->extensionRayQueueLength);
@@ -201,7 +223,7 @@ __global__ void newPathKernel(
 
 __global__ void materialKernel(
 	Paths* __restrict paths,
-	const Queues* __restrict queues,
+	Queues* __restrict queues,
 	const Material* __restrict materials)
 {
 	uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
@@ -211,10 +233,43 @@ __global__ void materialKernel(
 
 	id = queues->materialQueue[id];
 
-	const Intersection& intersection = paths->intersection[id];
-	const Material& material = materials[intersection.materialIndex];
-	paths->result[id] = material.baseColor * dot(paths->extensionRay[id].direction, -intersection.normal);
-	paths->throughput[id] = make_float3(0.0f, 0.0f, 0.0f);
+	const Intersection& extensionIntersection = paths->extensionIntersection[id];
+	const Intersection& lightIntersection = paths->lightIntersection[id];
+	const Material& extensionMaterial = materials[extensionIntersection.materialIndex];
+	const Material& lightMaterial = materials[lightIntersection.materialIndex];
+
+	float3 extensionDir = getDiffuseDirection(paths->random[id], extensionIntersection.normal);
+	float3 extensionBrdf = getDiffuseBrdf(extensionMaterial);
+	float extensionBrdfPdf = getDiffusePdf(extensionIntersection.normal, extensionDir);
+	float extensionCosine = dot(extensionIntersection.normal, extensionDir);
+
+	float3 lightEmittance = lightMaterial.emittance;
+	float3 lightBrdf = getDiffuseBrdf(extensionMaterial);
+	float lightBrdfPdf = getDiffusePdf(extensionIntersection.normal, paths->lightRay[id].direction);
+	float lightPdf = (lightIntersection.distance * lightIntersection.distance) / dot(lightIntersection.normal, -paths->lightRay[id].direction);
+	float lightCosine = dot(extensionIntersection.normal, paths->lightRay[id].direction);
+
+	Ray extensionRay;
+	extensionRay.origin = extensionIntersection.position;
+	extensionRay.direction = extensionDir;
+	initRay(extensionRay);
+
+	paths->extensionRay[id] = extensionRay;
+	paths->extensionBrdf[id] = extensionBrdf;
+	paths->extensionBrdfPdf[id] = extensionBrdfPdf;
+	paths->extensionCosine[id] = extensionCosine;
+
+	paths->lightEmittance[id] = lightEmittance;
+	paths->lightBrdf[id] = lightBrdf;
+	paths->lightBrdfPdf[id] = lightBrdfPdf;
+	paths->lightPdf[id] = lightPdf;
+	paths->lightCosine[id] = lightCosine;
+
+	uint32_t queueIndex = atomicAggInc(&queues->extensionRayQueueLength);
+	queues->extensionRayQueue[queueIndex] = id;
+
+	queueIndex = atomicAggInc(&queues->lightRayQueueLength);
+	queues->lightRayQueue[queueIndex] = id;
 }
 
 __global__ void extensionRayKernel(
@@ -233,11 +288,10 @@ __global__ void extensionRayKernel(
 	Ray ray = paths->extensionRay[id];
 	Intersection intersection;
 	intersectBvh(nodes, triangles, ray, intersection);
-	paths->intersection[id] = intersection;
-	paths->length[id]++;
+	paths->extensionIntersection[id] = intersection;
 }
 
-__global__ void shadowRayKernel(
+__global__ void lightRayKernel(
 	Paths* __restrict paths,
 	const Queues* __restrict queues,
 	const BVHNode* __restrict nodes,
@@ -245,13 +299,13 @@ __global__ void shadowRayKernel(
 {
 	uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
-	if (id >= queues->shadowRayQueueLength)
+	if (id >= queues->lightRayQueueLength)
 		return;
 
-	id = queues->shadowRayQueue[id];
+	id = queues->lightRayQueue[id];
 	
-	Ray ray = paths->shadowRay[id];
+	Ray ray = paths->lightRay[id];
 	Intersection intersection;
 	intersectBvh(nodes, triangles, ray, intersection);
-	paths->shadowRayBlocked[id] = intersection.wasFound;
+	paths->lightIntersection[id].wasFound = intersection.wasFound;
 }
