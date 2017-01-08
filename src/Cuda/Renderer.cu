@@ -47,8 +47,9 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::checkError(cudaMallocManaged(&paths->lightCosine, sizeof(float) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->lightRayBlocked, sizeof(bool) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->writePixelsQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->materialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
+	CudaUtils::checkError(cudaMallocManaged(&queues->diffuseMaterialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->extensionRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->lightRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 
@@ -61,8 +62,9 @@ void Renderer::initialize(const Scene& scene)
 	calculateDimensions(reinterpret_cast<void*>(initPathsKernel), "initPathsKernel", pathCount, initPathsBlockSize, initPathsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(clearPathsKernel), "clearPathsKernel", pathCount, clearPathsBlockSize, clearPathsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
+	calculateDimensions(reinterpret_cast<void*>(writePixelsKernel), "writePixelsKernel", pathCount, writePixelsBlockSize, writePixelsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
-	calculateDimensions(reinterpret_cast<void*>(materialKernel), "materialKernel", pathCount, materialBlockSize, materialGridSize);
+	calculateDimensions(reinterpret_cast<void*>(diffuseMaterialKernel), "diffuseMaterialKernel", pathCount, diffuseMaterialBlockSize, diffuseMaterialGridSize);
 	calculateDimensions(reinterpret_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
 	calculateDimensions(reinterpret_cast<void*>(lightRayKernel), "lightRayKernel", pathCount, lightRayBlockSize, lightRayGridSize);
 
@@ -75,8 +77,9 @@ void Renderer::initialize(const Scene& scene)
 	averageRaysPerSecond.setAlpha(0.05f);
 	emitterCount = uint32_t(scene.emitters.size());
 
+	queues->writePixelsQueueLength = 0;
 	queues->newPathQueueLength = 0;
-	queues->materialQueueLength = 0;
+	queues->diffuseMaterialQueueLength = 0;
 	queues->extensionRayQueueLength = 0;
 	queues->lightRayQueueLength = 0;
 }
@@ -107,8 +110,9 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(paths->lightCosine), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths->lightRayBlocked), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->writePixelsQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->newPathQueue), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->materialQueue), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFree(queues->diffuseMaterialQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->extensionRayQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->lightRayQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues), "Could not free CUDA device memory");
@@ -128,7 +132,7 @@ void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 	pixelCount = filmWidth * filmHeight;
 	CudaUtils::checkError(cudaMallocManaged(&pixels, sizeof(Pixel) * pixelCount), "Could not allocate CUDA device memory");
 	calculateDimensions(reinterpret_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
-	calculateDimensions(reinterpret_cast<void*>(writePixelsToFilmKernel), "writePixelsToFilmKernel", pixelCount, writePixelsToFilmBlockSize, writePixelsToFilmGridSize);
+	calculateDimensions(reinterpret_cast<void*>(writeFilmKernel), "writeFilmKernel", pixelCount, writeFilmBlockSize, writeFilmGridSize);
 
 	clear();
 }
@@ -149,15 +153,53 @@ void Renderer::render()
 	Film& film = App::getWindow().getFilm();
 
 	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, queues, triangles, emitters, materials, pixels, pathCount, emitterCount, film.getWidth(), film.getHeight());
-	newPathKernel<<<newPathGridSize, newPathBlockSize>>>(paths, queues, camera, film.getWidth(), film.getHeight(), film.getLength());
-	materialKernel<<<materialGridSize, materialBlockSize>>>(paths, queues, materials);
-	extensionRayKernel << <extensionRayGridSize, extensionRayBlockSize >> >(paths, queues, nodes, triangles);
-	lightRayKernel<<<lightRayGridSize, lightRayBlockSize>>>(paths, queues, nodes, triangles);
-
-	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
-	writePixelsToFilmKernel<<<writePixelsToFilmGridSize, writePixelsToFilmBlockSize>>>(pixels, pixelCount, filmSurfaceObject, film.getWidth());
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writePixels)");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writePixels)");
+
+	if (queues->writePixelsQueueLength > 0)
+	{
+		writePixelsGridSize = (queues->writePixelsQueueLength + writePixelsBlockSize - 1) / writePixelsBlockSize;
+		writePixelsKernel<<<writePixelsGridSize, writePixelsBlockSize>>>(paths, queues, pixels, film.getWidth(), film.getHeight());
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writePixels)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writePixels)");
+	}
+
+	if (queues->newPathQueueLength > 0)
+	{
+		newPathGridSize = (queues->newPathQueueLength + newPathBlockSize - 1) / newPathBlockSize;
+		newPathKernel<<<newPathGridSize, newPathBlockSize>>>(paths, queues, camera, film.getWidth(), film.getHeight(), film.getLength());
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (newPath)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (newPath)");
+	}
+
+	if (queues->diffuseMaterialQueueLength > 0)
+	{
+		diffuseMaterialGridSize = (queues->diffuseMaterialQueueLength + diffuseMaterialBlockSize - 1) / diffuseMaterialBlockSize;
+		diffuseMaterialKernel<<<diffuseMaterialGridSize, diffuseMaterialBlockSize>>>(paths, queues, materials);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (diffuseMaterial)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (diffuseMaterial)");
+	}
+
+	if (queues->extensionRayQueueLength > 0)
+	{
+		extensionRayGridSize = (queues->extensionRayQueueLength + extensionRayBlockSize - 1) / extensionRayBlockSize;
+		extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(paths, queues, nodes, triangles);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (extensionRay)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (extensionRay)");
+	}
+
+	if (queues->lightRayQueueLength > 0)
+	{
+		lightRayGridSize = (queues->lightRayQueueLength + lightRayBlockSize - 1) / lightRayBlockSize;
+		lightRayKernel<<<lightRayGridSize, lightRayBlockSize>>>(paths, queues, nodes, triangles);
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (lightRay)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (lightRay)");
+	}
+
+	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
+	writeFilmKernel<<<writeFilmGridSize, writeFilmBlockSize>>>(pixels, pixelCount, filmSurfaceObject, film.getWidth());
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writeFilm)");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writeFilm)");
 	film.releaseFilmSurfaceObject();
 
 	float elapsedSeconds = timer.getElapsedSeconds();
@@ -165,8 +207,9 @@ void Renderer::render()
 	averageRaysPerSecond.addMeasurement(float(queues->extensionRayQueueLength + queues->lightRayQueueLength) / elapsedSeconds);
 	timer.restart();
 
+	queues->writePixelsQueueLength = 0;
 	queues->newPathQueueLength = 0;
-	queues->materialQueueLength = 0;
+	queues->diffuseMaterialQueueLength = 0;
 	queues->extensionRayQueueLength = 0;
 	queues->lightRayQueueLength = 0;
 }

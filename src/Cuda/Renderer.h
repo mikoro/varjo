@@ -51,18 +51,22 @@ namespace Varjo
 		int clearPathsGridSize = 0;
 		int clearPixelsBlockSize = 0;
 		int clearPixelsGridSize = 0;
-		int writePixelsToFilmBlockSize = 0;
-		int writePixelsToFilmGridSize = 0;
 		int logicBlockSize = 0;
 		int logicGridSize = 0;
+		int writePixelsBlockSize = 0;
+		int writePixelsGridSize = 0;
 		int newPathBlockSize = 0;
 		int newPathGridSize = 0;
-		int materialBlockSize = 0;
-		int materialGridSize = 0;
+		int diffuseMaterialBlockSize = 0;
+		int diffuseMaterialGridSize = 0;
+		int disneyMaterialBlockSize = 0;
+		int disneyMaterialGridSize = 0;
 		int extensionRayBlockSize = 0;
 		int extensionRayGridSize = 0;
 		int lightRayBlockSize = 0;
 		int lightRayGridSize = 0;
+		int writeFilmBlockSize = 0;
+		int writeFilmGridSize = 0;
 
 		Timer timer;
 		MovingAverage averagePathsPerSecond;

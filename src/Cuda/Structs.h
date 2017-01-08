@@ -70,13 +70,15 @@ namespace Varjo
 	// wavefront queues
 	struct Queues
 	{
+		uint32_t* writePixelsQueue;
 		uint32_t* newPathQueue;
-		uint32_t* materialQueue;
+		uint32_t* diffuseMaterialQueue;
 		uint32_t* extensionRayQueue;
 		uint32_t* lightRayQueue;
 
+		uint32_t writePixelsQueueLength;
 		uint32_t newPathQueueLength;
-		uint32_t materialQueueLength;
+		uint32_t diffuseMaterialQueueLength;
 		uint32_t extensionRayQueueLength;
 		uint32_t lightRayQueueLength;
 	};
