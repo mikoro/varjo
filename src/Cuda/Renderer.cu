@@ -47,7 +47,6 @@ void Renderer::initialize(const Scene& scene)
 	CudaUtils::checkError(cudaMallocManaged(&paths->lightCosine, sizeof(float) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&paths->lightRayBlocked, sizeof(bool) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues, sizeof(Queues)), "Could not allocate CUDA device memory");
-	CudaUtils::checkError(cudaMallocManaged(&queues->writePixelsQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->newPathQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->diffuseMaterialQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
 	CudaUtils::checkError(cudaMallocManaged(&queues->extensionRayQueue, sizeof(uint32_t) * pathCount), "Could not allocate CUDA device memory");
@@ -62,7 +61,6 @@ void Renderer::initialize(const Scene& scene)
 	calculateDimensions(reinterpret_cast<void*>(initPathsKernel), "initPathsKernel", pathCount, initPathsBlockSize, initPathsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(clearPathsKernel), "clearPathsKernel", pathCount, clearPathsBlockSize, clearPathsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(logicKernel), "logicKernel", pathCount, logicBlockSize, logicGridSize);
-	calculateDimensions(reinterpret_cast<void*>(writePixelsKernel), "writePixelsKernel", pathCount, writePixelsBlockSize, writePixelsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(newPathKernel), "newPathKernel", pathCount, newPathBlockSize, newPathGridSize);
 	calculateDimensions(reinterpret_cast<void*>(diffuseMaterialKernel), "diffuseMaterialKernel", pathCount, diffuseMaterialBlockSize, diffuseMaterialGridSize);
 	calculateDimensions(reinterpret_cast<void*>(extensionRayKernel), "extensionRayKernel", pathCount, extensionRayBlockSize, extensionRayGridSize);
@@ -77,7 +75,6 @@ void Renderer::initialize(const Scene& scene)
 	averageRaysPerSecond.setAlpha(0.05f);
 	emitterCount = uint32_t(scene.emitters.size());
 
-	queues->writePixelsQueueLength = 0;
 	queues->newPathQueueLength = 0;
 	queues->diffuseMaterialQueueLength = 0;
 	queues->extensionRayQueueLength = 0;
@@ -110,7 +107,6 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(paths->lightCosine), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths->lightRayBlocked), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(paths), "Could not free CUDA device memory");
-	CudaUtils::checkError(cudaFree(queues->writePixelsQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->newPathQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->diffuseMaterialQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->extensionRayQueue), "Could not free CUDA device memory");
@@ -156,14 +152,6 @@ void Renderer::render()
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writePixels)");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writePixels)");
 
-	if (queues->writePixelsQueueLength > 0)
-	{
-		writePixelsGridSize = (queues->writePixelsQueueLength + writePixelsBlockSize - 1) / writePixelsBlockSize;
-		writePixelsKernel<<<writePixelsGridSize, writePixelsBlockSize>>>(paths, queues, pixels, film.getWidth(), film.getHeight());
-		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writePixels)");
-		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writePixels)");
-	}
-
 	if (queues->newPathQueueLength > 0)
 	{
 		newPathGridSize = (queues->newPathQueueLength + newPathBlockSize - 1) / newPathBlockSize;
@@ -207,7 +195,6 @@ void Renderer::render()
 	averageRaysPerSecond.addMeasurement(float(queues->extensionRayQueueLength + queues->lightRayQueueLength) / elapsedSeconds);
 	timer.restart();
 
-	queues->writePixelsQueueLength = 0;
 	queues->newPathQueueLength = 0;
 	queues->diffuseMaterialQueueLength = 0;
 	queues->extensionRayQueueLength = 0;

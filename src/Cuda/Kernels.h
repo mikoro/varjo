@@ -116,61 +116,19 @@ __global__ void logicKernel(
 	// terminate path
 	if (terminate || !paths->extensionIntersection[id].wasFound)
 	{
-		// add path to writePixels queue
-		uint32_t queueIndex = atomicAggInc(&queues->writePixelsQueueLength);
-		queues->writePixelsQueue[queueIndex] = id;
+		writeToPixels(paths, pixels, id, filmWidth, filmHeight);
 		
 		// add path to newPath queue
-		queueIndex = atomicAggInc(&queues->newPathQueueLength);
+		uint32_t queueIndex = atomicAggInc(&queues->newPathQueueLength);
 		queues->newPathQueue[queueIndex] = id;
 	}
 	else // path continues
 	{
-		// select random emissive triangle
 		generateLightSample(paths, triangles, emitters, materials, id, emitterCount);
 
 		// add path to diffuse material queue
 		uint32_t queueIndex = atomicAggInc(&queues->diffuseMaterialQueueLength);
 		queues->diffuseMaterialQueue[queueIndex] = id;
-	}
-}
-
-__global__ void writePixelsKernel(
-	Paths* __restrict paths,
-	Queues* __restrict queues,
-	Pixel* __restrict pixels,
-	uint32_t filmWidth,
-	uint32_t filmHeight)
-{
-	uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
-
-	if (id >= queues->writePixelsQueueLength)
-		return;
-
-	id = queues->writePixelsQueue[id];
-
-	int ox = int(paths->filmSamplePosition[id].x);
-	int oy = int(paths->filmSamplePosition[id].y);
-
-	for (int tx = -1; tx <= 2; ++tx)
-	{
-		for (int ty = -1; ty <= 2; ++ty)
-		{
-			int px = ox + tx;
-			int py = oy + ty;
-			px = clamp(px, 0, int(filmWidth) - 1);
-			py = clamp(py, 0, int(filmHeight) - 1);
-			float2 pixelPosition = make_float2(float(px), float(py));
-			float2 distance = pixelPosition - paths->filmSamplePosition[id];
-			float weight = mitchellFilter(distance.x) * mitchellFilter(distance.y);
-			float3 color = weight * paths->result[id];
-			int pixelIndex = py * int(filmWidth) + px;
-
-			atomicAdd(&(pixels[pixelIndex].color.x), color.x);
-			atomicAdd(&(pixels[pixelIndex].color.y), color.y);
-			atomicAdd(&(pixels[pixelIndex].color.z), color.z);
-			atomicAdd(&(pixels[pixelIndex].weight), weight);
-		}
 	}
 }
 

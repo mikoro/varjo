@@ -53,8 +53,6 @@ namespace Varjo
 		int clearPixelsGridSize = 0;
 		int logicBlockSize = 0;
 		int logicGridSize = 0;
-		int writePixelsBlockSize = 0;
-		int writePixelsGridSize = 0;
 		int newPathBlockSize = 0;
 		int newPathGridSize = 0;
 		int diffuseMaterialBlockSize = 0;

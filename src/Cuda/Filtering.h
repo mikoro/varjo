@@ -21,3 +21,30 @@ __device__ inline float mitchellFilter(float s)
 
 	return 0.0f;
 }
+
+__device__ inline void writeToPixels(const Paths* __restrict paths, Pixel* __restrict pixels, uint32_t pathId, uint32_t filmWidth, uint32_t filmHeight)
+{
+	int ox = int(paths->filmSamplePosition[pathId].x);
+	int oy = int(paths->filmSamplePosition[pathId].y);
+
+	for (int tx = -1; tx <= 2; ++tx)
+	{
+		for (int ty = -1; ty <= 2; ++ty)
+		{
+			int px = ox + tx;
+			int py = oy + ty;
+			px = clamp(px, 0, int(filmWidth) - 1);
+			py = clamp(py, 0, int(filmHeight) - 1);
+			float2 pixelPosition = make_float2(float(px), float(py));
+			float2 distance = pixelPosition - paths->filmSamplePosition[pathId];
+			float weight = mitchellFilter(distance.x) * mitchellFilter(distance.y);
+			float3 color = weight * paths->result[pathId];
+			int pixelIndex = py * int(filmWidth) + px;
+
+			atomicAdd(&(pixels[pixelIndex].color.x), color.x);
+			atomicAdd(&(pixels[pixelIndex].color.y), color.y);
+			atomicAdd(&(pixels[pixelIndex].color.z), color.z);
+			atomicAdd(&(pixels[pixelIndex].weight), weight);
+		}
+	}
+}
