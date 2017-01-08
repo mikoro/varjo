@@ -272,3 +272,47 @@ __global__ void writeFilmKernel(Pixel* pixels, uint32_t pixelCount, cudaSurfaceO
 
 	surf2Dwrite(make_float4(color, 1.0f), film, x * sizeof(float4), y, cudaBoundaryModeZero);
 }
+
+__global__ void filterFilmKernel1(cudaSurfaceObject_t film, cudaSurfaceObject_t filter, uint32_t filmWidth, uint32_t filmHeight)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x >= filmWidth || y >= filmHeight)
+		return;
+
+	const float gaussianKernel[5][5] = {
+		{ 0.003765f, 0.015019f, 0.023792f, 0.015019f, 0.003765f },
+		{ 0.015019f, 0.059912f, 0.094907f, 0.059912f, 0.015019f },
+		{ 0.023792f, 0.094907f, 0.150342f, 0.094907f, 0.023792f },
+		{ 0.015019f, 0.059912f, 0.094907f, 0.059912f, 0.015019f },
+		{ 0.003765f, 0.015019f, 0.023792f, 0.015019f, 0.003765f }
+	};
+
+	float4 color = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	for (int i = -2; i <= 2; ++i)
+	{
+		for (int j = -2; j <= 2; ++j)
+		{
+			int sx = x + i;
+			int sy = y + j;
+			float weight = gaussianKernel[j + 2][i + 2];
+			color += weight * surf2Dread<float4>(film, sx * sizeof(float4), sy, cudaBoundaryModeZero);
+		}
+	}
+
+	surf2Dwrite(color, filter, x * sizeof(float4), y, cudaBoundaryModeZero);
+}
+
+__global__ void filterFilmKernel2(cudaSurfaceObject_t film, cudaSurfaceObject_t filter, uint32_t filmWidth, uint32_t filmHeight)
+{
+	uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
+	uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x >= filmWidth || y >= filmHeight)
+		return;
+
+	float4 color = surf2Dread<float4>(filter, x * sizeof(float4), y, cudaBoundaryModeZero);
+	surf2Dwrite(color, film, x * sizeof(float4), y, cudaBoundaryModeZero);
+}

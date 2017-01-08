@@ -112,23 +112,44 @@ void Renderer::shutdown()
 	CudaUtils::checkError(cudaFree(queues->extensionRayQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues->lightRayQueue), "Could not free CUDA device memory");
 	CudaUtils::checkError(cudaFree(queues), "Could not free CUDA device memory");
+
+	CudaUtils::checkError(cudaDestroySurfaceObject(filterSurfaceObject), "Could not destroy CUDA surface object");
+
+	CudaUtils::checkError(cudaFree(pixels), "Could not free CUDA device memory");
+	CudaUtils::checkError(cudaFreeArray(filterArray), "Could not free CUDA array");
 }
 
 void Renderer::update(const Scene& scene)
 {
 	CameraData cameraData = scene.camera.getCameraData();
 	memcpy(camera, &cameraData, sizeof(CameraData));
+	shouldFilter = scene.camera.isMoving();
 }
 
 void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 {
+	pixelCount = filmWidth * filmHeight;
+
 	if (pixels != nullptr)
 		CudaUtils::checkError(cudaFree(pixels), "Could not free CUDA device memory");
 
-	pixelCount = filmWidth * filmHeight;
 	CudaUtils::checkError(cudaMallocManaged(&pixels, sizeof(Pixel) * pixelCount), "Could not allocate CUDA device memory");
+
+	if (filterArray != nullptr)
+		CudaUtils::checkError(cudaFreeArray(filterArray), "Could not free CUDA array");
+
+	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindFloat);
+	CudaUtils::checkError(cudaMallocArray(&filterArray, &channelDesc, filmWidth, filmHeight, cudaArraySurfaceLoadStore), "Could not allocate CUDA array");
+
+	cudaResourceDesc resourceDesc;
+	memset(&resourceDesc, 0, sizeof(resourceDesc));
+	resourceDesc.resType = cudaResourceTypeArray;
+	resourceDesc.res.array.array = filterArray;
+	CudaUtils::checkError(cudaCreateSurfaceObject(&filterSurfaceObject, &resourceDesc), "Could not create CUDA surface object");
+
 	calculateDimensions(reinterpret_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(writeFilmKernel), "writeFilmKernel", pixelCount, writeFilmBlockSize, writeFilmGridSize);
+	calculateDimensions2D(reinterpret_cast<void*>(filterFilmKernel1), "filterFilmKernel1", filmWidth, filmHeight, filterFilmBlockSize, filterFilmGridSize);
 
 	clear();
 }
@@ -185,9 +206,22 @@ void Renderer::render()
 	}
 
 	cudaSurfaceObject_t filmSurfaceObject = film.getFilmSurfaceObject();
+
 	writeFilmKernel<<<writeFilmGridSize, writeFilmBlockSize>>>(pixels, pixelCount, filmSurfaceObject, film.getWidth());
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (writeFilm)");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (writeFilm)");
+
+	if (shouldFilter)
+	{
+		filterFilmKernel1<<<filterFilmGridSize, filterFilmBlockSize>>>(filmSurfaceObject, filterSurfaceObject, film.getWidth(), film.getHeight());
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (filterFilm1)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (filterFilm1)");
+
+		filterFilmKernel2<<<filterFilmGridSize, filterFilmBlockSize>>>(filmSurfaceObject, filterSurfaceObject, film.getWidth(), film.getHeight());
+		CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (filterFilm2)");
+		CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (filterFilm2)");
+	}
+	
 	film.releaseFilmSurfaceObject();
 
 	float elapsedSeconds = timer.getElapsedSeconds();

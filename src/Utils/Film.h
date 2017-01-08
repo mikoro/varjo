@@ -51,6 +51,6 @@ namespace Varjo
 		GLuint texelHeightUniformId = 0;
 
 		cudaGraphicsResource* textureResource = nullptr;
-		cudaSurfaceObject_t textureSurfaceObject;
+		cudaSurfaceObject_t textureSurfaceObject = 0;
 	};
 }
