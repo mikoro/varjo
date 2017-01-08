@@ -26,6 +26,8 @@ __device__ inline void writeToPixels(const Paths* __restrict paths, Pixel* __res
 {
 	int ox = int(paths->filmSamplePosition[pathId].x);
 	int oy = int(paths->filmSamplePosition[pathId].y);
+	float2 filmSamplePosition = paths->filmSamplePosition[pathId];
+	float3 result = paths->result[pathId];
 
 	for (int tx = -1; tx <= 2; ++tx)
 	{
@@ -36,15 +38,15 @@ __device__ inline void writeToPixels(const Paths* __restrict paths, Pixel* __res
 			px = clamp(px, 0, int(filmWidth) - 1);
 			py = clamp(py, 0, int(filmHeight) - 1);
 			float2 pixelPosition = make_float2(float(px), float(py));
-			float2 distance = pixelPosition - paths->filmSamplePosition[pathId];
+			float2 distance = pixelPosition - filmSamplePosition;
 			float weight = mitchellFilter(distance.x) * mitchellFilter(distance.y);
-			float3 color = weight * paths->result[pathId];
+			float3 color = weight * result;
 			int pixelIndex = py * int(filmWidth) + px;
 
-			atomicAdd(&(pixels[pixelIndex].color.x), color.x);
-			atomicAdd(&(pixels[pixelIndex].color.y), color.y);
-			atomicAdd(&(pixels[pixelIndex].color.z), color.z);
-			atomicAdd(&(pixels[pixelIndex].weight), weight);
+			atomicAdd(&pixels[pixelIndex].color.x, color.x);
+			atomicAdd(&pixels[pixelIndex].color.y, color.y);
+			atomicAdd(&pixels[pixelIndex].color.z, color.z);
+			atomicAdd(&pixels[pixelIndex].weight, weight);
 		}
 	}
 }

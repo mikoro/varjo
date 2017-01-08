@@ -76,14 +76,15 @@ __global__ void logicKernel(
 
 	bool terminate = false;
 	float continueProb = 1.0f;
+	Random random = paths->random[id];
+	float3 throughput = paths->throughput[id];
 	uint32_t pathLength = paths->length[id]++;
 
 	// russian roulette
 	if (pathLength > 2)
 	{
-		float3 throughput = paths->throughput[id];
 		continueProb = clamp(fmaxf(throughput.x, fmaxf(throughput.y, throughput.z)), 0.0f, 0.95f);
-		terminate = randomFloat(paths->random[id]) > continueProb;
+		terminate = randomFloat(random) > continueProb;
 	}
 
 	// add direct emittance
@@ -103,12 +104,14 @@ __global__ void logicKernel(
 			float misPdf = paths->lightPdf[id];
 
 			if (misPdf > 0.0f)
-				paths->result[id] += paths->throughput[id] * paths->lightEmittance[id] * paths->lightBrdf[id] * (paths->lightCosine[id] / misPdf);
+				paths->result[id] += throughput * paths->lightEmittance[id] * paths->lightBrdf[id] * (paths->lightCosine[id] / misPdf);
 		}
 
+		float extensionBrdfPdf = paths->extensionBrdfPdf[id];
+
 		// update path throughput
-		if (paths->extensionBrdfPdf[id] > 0.0f)
-			paths->throughput[id] *= paths->extensionBrdf[id] * (paths->extensionCosine[id] / paths->extensionBrdfPdf[id] / continueProb);
+		if (extensionBrdfPdf > 0.0f)
+			throughput *= paths->extensionBrdf[id] * (paths->extensionCosine[id] / extensionBrdfPdf / continueProb);
 		else
 			terminate = true;
 	}
@@ -124,12 +127,16 @@ __global__ void logicKernel(
 	}
 	else // path continues
 	{
-		generateLightSample(paths, triangles, emitters, materials, id, emitterCount);
+		generateLightSample(paths, triangles, emitters, materials, random, id, emitterCount);
 
 		// add path to diffuse material queue
 		uint32_t queueIndex = atomicAggInc(&queues->diffuseMaterialQueueLength);
 		queues->diffuseMaterialQueue[queueIndex] = id;
+
+		paths->throughput[id] = throughput;
 	}
+
+	paths->random[id] = random;
 }
 
 __global__ void newPathKernel(
@@ -177,14 +184,15 @@ __global__ void diffuseMaterialKernel(
 
 	id = queues->diffuseMaterialQueue[id];
 
-	const Intersection& extensionIntersection = paths->extensionIntersection[id];
-	const Material& extensionMaterial = materials[extensionIntersection.materialIndex];
+	Random random = paths->random[id];
+	const Intersection extensionIntersection = paths->extensionIntersection[id];
+	const Material extensionMaterial = materials[extensionIntersection.materialIndex];
 
-	float3 extensionDir = getDiffuseDirection(paths->random[id], extensionIntersection.normal);
+	float3 extensionDir = getDiffuseDirection(random, extensionIntersection.normal);
+
 	paths->extensionBrdf[id] = getDiffuseBrdf(extensionMaterial);
 	paths->extensionBrdfPdf[id] = getDiffusePdf(extensionIntersection.normal, extensionDir);
 	paths->extensionCosine[id] = dot(extensionIntersection.normal, extensionDir);
-
 	paths->lightBrdf[id] = getDiffuseBrdf(extensionMaterial);
 	paths->lightBrdfPdf[id] = getDiffusePdf(extensionIntersection.normal, paths->lightRay[id].direction);
 
@@ -192,6 +200,7 @@ __global__ void diffuseMaterialKernel(
 	extensionRay.origin = extensionIntersection.position + RAY_EPSILON * extensionDir;
 	extensionRay.direction = extensionDir;
 	initRay(extensionRay);
+
 	paths->extensionRay[id] = extensionRay;
 	
 	uint32_t queueIndex = atomicAggInc(&queues->extensionRayQueueLength);
@@ -199,6 +208,8 @@ __global__ void diffuseMaterialKernel(
 
 	queueIndex = atomicAggInc(&queues->lightRayQueueLength);
 	queues->lightRayQueue[queueIndex] = id;
+
+	paths->random[id] = random;
 }
 
 __global__ void extensionRayKernel(
@@ -219,11 +230,8 @@ __global__ void extensionRayKernel(
 	intersectBvh(nodes, triangles, ray, intersection);
 
 	// make normal always to face the ray
-	if (intersection.wasFound)
-	{
-		if (dot(intersection.normal, -ray.direction) < 0.0f)
-			intersection.normal = -intersection.normal;
-	}
+	if (intersection.wasFound && dot(intersection.normal, ray.direction) > 0.0f)
+		intersection.normal = -intersection.normal;
 
 	paths->extensionIntersection[id] = intersection;
 }
@@ -271,48 +279,4 @@ __global__ void writeFilmKernel(Pixel* pixels, uint32_t pixelCount, cudaSurfaceO
 	color.z = powf(color.z, invGamma);
 
 	surf2Dwrite(make_float4(color, 1.0f), film, x * sizeof(float4), y, cudaBoundaryModeZero);
-}
-
-__global__ void filterFilmKernel1(cudaSurfaceObject_t film, cudaSurfaceObject_t filter, uint32_t filmWidth, uint32_t filmHeight)
-{
-	int x = threadIdx.x + blockIdx.x * blockDim.x;
-	int y = threadIdx.y + blockIdx.y * blockDim.y;
-
-	if (x >= filmWidth || y >= filmHeight)
-		return;
-
-	const float gaussianKernel[5][5] = {
-		{ 0.003765f, 0.015019f, 0.023792f, 0.015019f, 0.003765f },
-		{ 0.015019f, 0.059912f, 0.094907f, 0.059912f, 0.015019f },
-		{ 0.023792f, 0.094907f, 0.150342f, 0.094907f, 0.023792f },
-		{ 0.015019f, 0.059912f, 0.094907f, 0.059912f, 0.015019f },
-		{ 0.003765f, 0.015019f, 0.023792f, 0.015019f, 0.003765f }
-	};
-
-	float4 color = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-	for (int i = -2; i <= 2; ++i)
-	{
-		for (int j = -2; j <= 2; ++j)
-		{
-			int sx = x + i;
-			int sy = y + j;
-			float weight = gaussianKernel[j + 2][i + 2];
-			color += weight * surf2Dread<float4>(film, sx * sizeof(float4), sy, cudaBoundaryModeZero);
-		}
-	}
-
-	surf2Dwrite(color, filter, x * sizeof(float4), y, cudaBoundaryModeZero);
-}
-
-__global__ void filterFilmKernel2(cudaSurfaceObject_t film, cudaSurfaceObject_t filter, uint32_t filmWidth, uint32_t filmHeight)
-{
-	uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
-	uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
-
-	if (x >= filmWidth || y >= filmHeight)
-		return;
-
-	float4 color = surf2Dread<float4>(filter, x * sizeof(float4), y, cudaBoundaryModeZero);
-	surf2Dwrite(color, film, x * sizeof(float4), y, cudaBoundaryModeZero);
 }

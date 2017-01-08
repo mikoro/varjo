@@ -41,12 +41,9 @@ namespace Varjo
 		Paths* paths = nullptr;
 		Queues* queues = nullptr;
 		Pixel* pixels = nullptr;
-		cudaArray* filterArray = nullptr;
-		cudaSurfaceObject_t filterSurfaceObject = 0;
 		
 		uint32_t emitterCount = 0;
 		uint32_t pixelCount = 0;
-		bool shouldFilter = false;
 
 		int initPathsBlockSize = 0;
 		int initPathsGridSize = 0;
@@ -68,8 +65,6 @@ namespace Varjo
 		int lightRayGridSize = 0;
 		int writeFilmBlockSize = 0;
 		int writeFilmGridSize = 0;
-		dim3 filterFilmBlockSize = 0;
-		dim3 filterFilmGridSize = 0;
 
 		Timer timer;
 		MovingAverage averagePathsPerSecond;
