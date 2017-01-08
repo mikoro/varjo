@@ -12,6 +12,8 @@
 #include "Utils/Timer.h"
 #include "Math/MovingAverage.h"
 
+#define RAY_EPSILON 0.0001f
+
 namespace Varjo
 {
 	class Renderer
@@ -43,10 +45,14 @@ namespace Varjo
 		uint32_t emitterCount = 0;
 		uint32_t pixelCount = 0;
 
+		int initPathsBlockSize = 0;
+		int initPathsGridSize = 0;
+		int clearPathsBlockSize = 0;
+		int clearPathsGridSize = 0;
 		int clearPixelsBlockSize = 0;
 		int clearPixelsGridSize = 0;
-		int writePixelsBlockSize = 0;
-		int writePixelsGridSize = 0;
+		int writePixelsToFilmBlockSize = 0;
+		int writePixelsToFilmGridSize = 0;
 		int logicBlockSize = 0;
 		int logicGridSize = 0;
 		int newPathBlockSize = 0;

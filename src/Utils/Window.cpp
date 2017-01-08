@@ -126,10 +126,8 @@ void Window::run()
 	scene.initialize();
 
 	film.initialize();
-	windowResized(settings.window.width, settings.window.height);
-
 	renderer.initialize(scene);
-
+	windowResized(settings.window.width, settings.window.height);
 	infoPanel.initialize();
 	infoPanel.setState(InfoPanelState(settings.general.infoPanelState));
 	

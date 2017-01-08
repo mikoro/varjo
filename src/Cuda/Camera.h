@@ -4,15 +4,10 @@
 #pragma once
 
 #include "Cuda/Math.h"
+#include "Cuda/Misc.h"
 #include "Core/Camera.h"
 
 using namespace Varjo;
-
-__device__ inline void initRay(Ray& ray)
-{
-	ray.invD = make_float3(1.0, 1.0f, 1.0f) / ray.direction;
-	ray.OoD = ray.origin / ray.direction;
-}
 
 __device__ inline Ray getCameraRay(const CameraData& camera, float2 filmPoint)
 {

@@ -59,12 +59,12 @@ namespace Varjo
 		float* extensionBrdfPdf;
 		float* extensionCosine;
 		Ray* lightRay;
-		Intersection* lightIntersection;
 		float3* lightEmittance;
 		float3* lightBrdf;
 		float* lightBrdfPdf;
 		float* lightPdf;
 		float* lightCosine;
+		bool* lightRayBlocked;
 	};
 
 	// wavefront queues
