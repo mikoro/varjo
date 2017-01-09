@@ -119,6 +119,7 @@ void Renderer::update(const Scene& scene)
 {
 	CameraData cameraData = scene.camera.getCameraData();
 	memcpy(camera, &cameraData, sizeof(CameraData));
+	maxPathLength = scene.camera.isMoving() ? 2 : 8;
 }
 
 void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
@@ -133,12 +134,23 @@ void Renderer::filmResized(uint32_t filmWidth, uint32_t filmHeight)
 	calculateDimensions(reinterpret_cast<void*>(clearPixelsKernel), "clearPixelsKernel", pixelCount, clearPixelsBlockSize, clearPixelsGridSize);
 	calculateDimensions(reinterpret_cast<void*>(writeFilmKernel), "writeFilmKernel", pixelCount, writeFilmBlockSize, writeFilmGridSize);
 	
-	clear();
+	clearFull();
 }
 
 void Renderer::clear()
 {
-	clearPathsKernel<<<clearPathsGridSize, clearPathsBlockSize>>>(paths, pathCount);
+	clearPathsKernel<<<clearPathsGridSize, clearPathsBlockSize>>>(paths, pathCount, false);
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (clearPaths)");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (clearPaths)");
+
+	clearPixelsKernel<<<clearPixelsGridSize, clearPixelsBlockSize>>>(pixels, pixelCount);
+	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (clearPixels)");
+	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (clearPixels)");
+}
+
+void Renderer::clearFull()
+{
+	clearPathsKernel<<<clearPathsGridSize, clearPathsBlockSize>>>(paths, pathCount, true);
 	CudaUtils::checkError(cudaPeekAtLastError(), "Could not launch CUDA kernel (clearPaths)");
 	CudaUtils::checkError(cudaDeviceSynchronize(), "Could not execute CUDA kernel (clearPaths)");
 
@@ -151,7 +163,7 @@ void Renderer::render()
 {
 	Film& film = App::getWindow().getFilm();
 
-	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, queues, triangles, emitters, materials, pixels, pathCount, emitterCount, film.getWidth(), film.getHeight());
+	logicKernel<<<logicGridSize, logicBlockSize>>>(paths, queues, triangles, emitters, materials, pixels, pathCount, emitterCount, film.getWidth(), film.getHeight(), maxPathLength);
 	newPathKernel<<<newPathGridSize, newPathBlockSize>>>(paths, queues, camera, film.getWidth(), film.getHeight(), film.getLength());
 	diffuseMaterialKernel<<<diffuseMaterialGridSize, diffuseMaterialBlockSize>>>(paths, queues, materials);
 	extensionRayKernel<<<extensionRayGridSize, extensionRayBlockSize>>>(paths, queues, nodes, triangles);

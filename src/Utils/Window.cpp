@@ -317,11 +317,21 @@ void Window::update(float timeStep)
 		}
 	}
 
+	if (keyWasPressed(GLFW_KEY_R))
+	{
+		scene.camera.reset();
+		renderer.clearFull();
+	}
+
 	scene.camera.update(timeStep);
 	renderer.update(scene);
 
 	if (scene.camera.isMoving())
 		renderer.clear();
+	else if (cameraWasMoving)
+		renderer.clearFull();
+
+	cameraWasMoving = scene.camera.isMoving();
 }
 
 void Window::render(float timeStep, float interpolation)

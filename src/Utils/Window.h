@@ -62,6 +62,7 @@ namespace Varjo
 		
 		bool shouldRun = true;
 		bool glfwInitialized = false;
+		bool cameraWasMoving = false;
 
 		double startTime = 0.0;
 

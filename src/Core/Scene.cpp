@@ -10,8 +10,8 @@ Scene Scene::createTestScene1()
 {
 	Scene scene;
 
-	scene.camera.position = Vector3(1.4004f, 1.8210f, 2.8143f);
-	scene.camera.orientation = EulerAngle(-18.3100f, 29.0997f, 0.0000f);
+	scene.camera.position = Vector3(0.0f, 0.99f, 3.06f);
+	scene.camera.orientation = EulerAngle(0.0f, 0.0f, 0.0f);
 	scene.camera.fov = 75.00f;
 
 	scene.modelFileName = "data/models/cornellbox/cornellbox.obj";

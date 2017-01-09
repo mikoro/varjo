@@ -25,6 +25,7 @@ namespace Varjo
 		void update(const Scene& scene);
 		void filmResized(uint32_t filmWidth, uint32_t filmHeight);
 		void clear();
+		void clearFull();
 		void render();
 		float getPathsPerSecond() const;
 		float getRaysPerSecond() const;
@@ -44,6 +45,7 @@ namespace Varjo
 		
 		uint32_t emitterCount = 0;
 		uint32_t pixelCount = 0;
+		uint32_t maxPathLength = 0;
 
 		int initPathsBlockSize = 0;
 		int initPathsGridSize = 0;

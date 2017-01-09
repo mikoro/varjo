@@ -34,15 +34,23 @@ __global__ void initPathsKernel(Paths* paths, uint64_t seed, uint32_t pathCount)
 	paths->extensionIntersection[id] = Intersection();
 }
 
-__global__ void clearPathsKernel(Paths* paths, uint32_t pathCount)
+__global__ void clearPathsKernel(Paths* paths, uint32_t pathCount, bool full)
 {
 	uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (id >= pathCount)
 		return;
 
-	if (paths->length[id] > 1)
+	if (full)
+	{
+		paths->length[id] = 0;
 		paths->extensionIntersection[id] = Intersection();
+	}
+	else
+	{
+		if (paths->length[id] > 2)
+			paths->extensionIntersection[id] = Intersection();
+	}
 }
 
 __global__ void clearPixelsKernel(Pixel* pixels, uint32_t pixelCount)
@@ -67,7 +75,8 @@ __global__ void logicKernel(
 	uint32_t pathCount,
 	uint32_t emitterCount,
 	uint32_t filmWidth,
-	uint32_t filmHeight)
+	uint32_t filmHeight,
+	uint32_t maxPathLength)
 {
 	const uint32_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -78,7 +87,7 @@ __global__ void logicKernel(
 	float continueProb = 1.0f;
 	Random random = paths->random[id];
 	float3 throughput = paths->throughput[id];
-	uint32_t pathLength = paths->length[id]++;
+	uint32_t pathLength = paths->length[id];
 
 	// russian roulette
 	if (pathLength > 2)
@@ -87,15 +96,18 @@ __global__ void logicKernel(
 		terminate = randomFloat(random) > continueProb;
 	}
 
+	if (pathLength > maxPathLength)
+		terminate = true;
+
 	// add direct emittance
-	if (pathLength == 0 && paths->extensionIntersection[id].wasFound)
+	if (pathLength == 1 && paths->extensionIntersection[id].wasFound)
 	{
 		const Material& material = materials[paths->extensionIntersection[id].materialIndex];
 		paths->result[id] += material.emittance;
 	}
 
 	// skip these for the first part of the path
-	if (pathLength > 0)
+	if (pathLength > 1)
 	{
 		// add direct light
 		if (!paths->lightRayBlocked[id])
@@ -119,7 +131,8 @@ __global__ void logicKernel(
 	// terminate path
 	if (terminate || !paths->extensionIntersection[id].wasFound)
 	{
-		writeToPixels(paths, pixels, id, filmWidth, filmHeight);
+		if (pathLength > 0)
+			writeToPixels(paths, pixels, id, filmWidth, filmHeight);
 		
 		// add path to newPath queue
 		uint32_t queueIndex = atomicAggInc(&queues->newPathQueueLength);
@@ -233,6 +246,7 @@ __global__ void extensionRayKernel(
 	if (intersection.wasFound && dot(intersection.normal, ray.direction) > 0.0f)
 		intersection.normal = -intersection.normal;
 
+	paths->length[id]++;
 	paths->extensionIntersection[id] = intersection;
 }
 

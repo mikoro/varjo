@@ -129,9 +129,6 @@ void Camera::update(float timeStep)
 		smoothAngularAcceleration = Vector3(0.0f, 0.0f, 0.0f);
 	}
 
-	if (window.keyWasPressed(GLFW_KEY_R))
-		reset();
-
 	if (window.keyWasPressed(GLFW_KEY_F11))
 		saveState("camera.txt");
 

@@ -59,5 +59,5 @@ __device__ inline uint32_t atomicAggInc(uint32_t* ctr)
 __device__ inline void initRay(Ray& ray)
 {
 	ray.invD = make_float3(1.0, 1.0f, 1.0f) / ray.direction;
-	ray.OoD = ray.origin / ray.direction;
+	ray.OoD = -ray.origin / ray.direction;
 }
