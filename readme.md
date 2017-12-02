@@ -1,11 +1,11 @@
 # Varjo
 
-Physically based GPU (CUDA) wavefront path tracer
+Physically based GPU (CUDA) wavefront path tracer.
 
 * Author: [Mikko Ronkainen](http://mikkoronkainen.com)
 * Website: [github.com/mikoro/varjo](https://github.com/mikoro/varjo)
 
-![Screenshot](http://mikoro.github.io/images/varjo/readme-screenshot.jpg "Screenshot")
+![Screenshot](https://mikoro.github.io/images/varjo/screenshot.jpg "Screenshot")
 
 ## Download
 
@@ -40,7 +40,7 @@ For the interactive mode:
 ## License
 
     Varjo
-    Copyright © 2016 Mikko Ronkainen
+    Copyright © 2017 Mikko Ronkainen
     
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
