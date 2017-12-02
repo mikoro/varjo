@@ -17,7 +17,7 @@ Download the latest version:
 
 You will need a NVIDIA GTX 900 Series GPU or newer.
 
-For windows, you will also need the [Visual C++ Redistributable for Visual Studio 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
+For windows, you will also need the [Microsoft Visual C++ Redistributable for Visual Studio 2017](https://go.microsoft.com/fwlink/?LinkId=746572).
 
 ## Features
 
